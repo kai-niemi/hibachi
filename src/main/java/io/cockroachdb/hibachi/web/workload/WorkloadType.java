@@ -17,6 +17,7 @@ import io.cockroachdb.hibachi.repository.UpdateOne;
 public enum WorkloadType {
     open_close("Open and close",
             false,
+            true,
             "Open and close connections") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -25,6 +26,7 @@ public enum WorkloadType {
     },
     singleton_insert("Singleton insert",
             false,
+            true,
             "Single insert statements") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -33,6 +35,7 @@ public enum WorkloadType {
     },
     batch_insert("Batch insert",
             false,
+            true,
             "Batch insert statements of 32 items") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -40,6 +43,7 @@ public enum WorkloadType {
         }
     },
     point_read_update("Point read and update",
+            true,
             true,
             "Point lookup read followed by an update") {
         @Override
@@ -49,6 +53,7 @@ public enum WorkloadType {
     },
     point_read_delete("Point read and delete",
             true,
+            true,
             "Point lookup read followed by a delete") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -57,6 +62,7 @@ public enum WorkloadType {
     },
     point_read("Point read",
             false,
+            true,
             "Single point lookup read") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -65,6 +71,7 @@ public enum WorkloadType {
     },
     point_read_historical("Point read historical",
             false,
+            true,
             "Single point lookup exact staleness read (follower)") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -73,6 +80,7 @@ public enum WorkloadType {
     },
     full_scan("Full table scan",
             false,
+            true,
             "A full table scan using order by random") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -81,6 +89,7 @@ public enum WorkloadType {
     },
     select_one("Select one",
             false,
+            true,
             "A 'select 1' statement") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -89,6 +98,7 @@ public enum WorkloadType {
     },
     select_version("Select version",
             false,
+            true,
             "A 'select version()' statement") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -96,6 +106,7 @@ public enum WorkloadType {
         }
     },
     random_wait("Random wait",
+            false,
             false,
             "Random waits with 5% chance of outliers") {
         @Override
@@ -116,6 +127,7 @@ public enum WorkloadType {
     },
     fixed_wait("Fixed wait",
             false,
+            false,
             "Fixed waits of 500ms") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
@@ -133,18 +145,26 @@ public enum WorkloadType {
 
     private final boolean explicit;
 
+    private final boolean requiresDataSource;
+
     private final String description;
 
     WorkloadType(String displayValue,
                  boolean explicit,
+                 boolean requiresDataSource,
                  String description) {
         this.displayValue = displayValue;
         this.explicit = explicit;
+        this.requiresDataSource = requiresDataSource;
         this.description = description;
     }
 
     public boolean isExplicit() {
         return explicit;
+    }
+
+    public boolean isRequiresDataSource() {
+        return requiresDataSource;
     }
 
     public String getDisplayValue() {

@@ -37,8 +37,6 @@
                 <ul>
                     <li th:each="err : ${#fields.errors('workloadForm.*')}" th:text="${err}"/>
                 </ul>
-                <a th:href="@{/workload}"
-                   class="btn btn-sm btn-space btn-outline-danger">Cancel</a>
             </div>
 
             <div class="alert alert-info align-items-center alert-dismissible fade show" role="alert"
@@ -57,7 +55,8 @@
                 <form th:action="@{/workload}" th:object="${workloadForm}" method="post" id="filterForm">
                     <div class="hstack gap-3">
                         <div class="col-auto">
-                            <button th:attr="disabled=${#lists.size(workloadForm.slots) == 0}"
+<!--                            th:attr="disabled=${#lists.size(workloadForm.slots) == 0}" -->
+                            <button
                                     class="btn btn-sm btn-primary me-md-0"
                                     type="button"
                                     data-bs-toggle="modal"
@@ -137,8 +136,8 @@
                         <th th:text="${aggregatedMetrics.p90}" class="p90">0</th>
                         <th th:text="${aggregatedMetrics.p99}" class="p99">0</th>
                         <th th:text="${aggregatedMetrics.p999}" class="p999">0</th>
-                        <th th:text="${aggregatedMetrics.opsPerSec}" class="opsPerSec">0</th>
-                        <th th:text="${aggregatedMetrics.opsPerMin}" class="opsPerMin">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerSec,2,1)}" class="opsPerSec">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerMin,2,1)}" class="opsPerMin">0</th>
                         <th th:text="${aggregatedMetrics.success}" class="success">0</th>
                         <th th:text="${aggregatedMetrics.transientFail}" class="transientFail">0</th>
                         <th th:text="${aggregatedMetrics.nonTransientFail}" class="nonTransientFail">0</th>

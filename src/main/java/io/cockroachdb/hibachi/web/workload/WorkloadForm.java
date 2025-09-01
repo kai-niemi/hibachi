@@ -24,7 +24,7 @@ public class WorkloadForm {
 
     private List<Slot> slots = List.of();
 
-    @NotNull(message = "Datasource slot must be selected")
+//    @NotNull(message = "Datasource slot must be selected")
     private Slot slot;
 
     public List<Slot> getSlots() {

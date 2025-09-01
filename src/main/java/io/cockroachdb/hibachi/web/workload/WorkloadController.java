@@ -21,6 +21,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -98,7 +99,7 @@ public class WorkloadController {
 
     @GetMapping
     public Callable<String> indexPage(@PageableDefault(size = 15) Pageable page,
-            Model model) {
+                                      Model model) {
 
         Page<WorkloadModel> workloadPage = workloadManager.getWorkloads(page,
                 workload -> {
@@ -116,17 +117,28 @@ public class WorkloadController {
                                                BindingResult bindingResult,
                                                Model model) {
 
+
+        final WorkloadType workloadType = workloadForm.getWorkloadType();
+        if (workloadType.isRequiresDataSource() && Objects.isNull(workloadForm.getSlot())) {
+            bindingResult.addError(new ObjectError("globalError", "Selected workload requires a datasource!"));
+        }
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
             model.addAttribute("workloadPage", Page.empty());
             return () -> "workload";
         }
 
-        final DataSource dataSource = connectionPools.get(workloadForm.getSlot().getName().toLowerCase());
-        Objects.requireNonNull(dataSource, "dataSource is null");
+        final DataSource dataSource;
+
+        if (Objects.nonNull(workloadForm.getSlot())) {
+            dataSource = connectionPools.get(workloadForm.getSlot().getName().toLowerCase());
+            Objects.requireNonNull(dataSource, "dataSource not found");
+        } else {
+            dataSource = null;
+        }
 
         final Duration duration = Duration.ofSeconds(workloadForm.getDuration());
-        final WorkloadType workloadType = workloadForm.getWorkloadType();
 
         IntStream.rangeClosed(1, workloadForm.getCount())
                 .forEach(value -> {
@@ -164,8 +176,7 @@ public class WorkloadController {
 
     @GetMapping(value = "/cancel/{id}")
     public RedirectView cancel(@PathVariable("id") Integer id) {
-        WorkloadModel workloadModel = workloadManager.getWorkloadById(id);
-        workloadModel.cancel();
+        workloadManager.cancelWorkload(id);
         return new RedirectView("/workload");
     }
 

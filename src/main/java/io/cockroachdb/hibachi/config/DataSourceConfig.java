@@ -25,7 +25,7 @@ import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 
-import io.cockroachdb.hibachi.web.editor.DataSourceModel;
+import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
 
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

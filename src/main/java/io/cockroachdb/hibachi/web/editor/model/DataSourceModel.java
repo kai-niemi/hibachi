@@ -1,4 +1,4 @@
-package io.cockroachdb.hibachi.web.editor;
+package io.cockroachdb.hibachi.web.editor.model;
 
 import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;

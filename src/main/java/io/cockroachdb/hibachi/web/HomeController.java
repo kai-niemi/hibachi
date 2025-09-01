@@ -15,8 +15,6 @@ import io.cockroachdb.hibachi.web.common.WebController;
 public class HomeController {
     @GetMapping("/")
     public Callable<String> homePage(Model model) {
-//        model.addAttribute("databaseVersion", databaseRepository.databaseVersion());
-//        model.addAttribute("databaseIsolation", databaseRepository.databaseIsolation());
         return () -> "home";
     }
 

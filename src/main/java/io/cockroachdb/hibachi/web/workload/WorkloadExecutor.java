@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +47,24 @@ public class WorkloadExecutor {
     public WorkloadModel submitWorkloadTask(String description, Duration duration, Runnable task) {
         final Metrics metrics = Metrics.empty();
         final LinkedList<Problem> problems = new LinkedList<>();
-        final Instant stopTime = Instant.now().plus(duration);
+
+        final WorkloadModel workloadModel = new WorkloadModel(
+                monotonicId.incrementAndGet(),
+                description,
+                duration,
+                metrics,
+                problems);
+
+        final Predicate<Integer> loopCondition =retries -> {
+            return Instant.now().isBefore(Instant.now().plus(duration)) && !workloadModel.isCancelled();
+        };
 
         final CompletableFuture<Boolean> future = asyncTaskExecutor.submitCompletable(() -> {
             final AtomicInteger retries = new AtomicInteger();
 
-            while (Instant.now().isBefore(stopTime)) {
+            logger.debug("Started workload %s".formatted(workloadModel.getId()));
+
+            while (loopCondition.test(retries.get())) {
                 if (Thread.interrupted()) {
                     logger.warn("Thread interrupted - bailing out");
                     break;
@@ -92,30 +105,21 @@ public class WorkloadExecutor {
                 }
             }
 
+            logger.debug("Finished workload %s".formatted(workloadModel.getId()));
+
             return problems.isEmpty();
         });
 
-        final WorkloadModel workloadModel = new WorkloadModel(
-                monotonicId.incrementAndGet(),
-                description,
-                duration,
-                metrics,
-                problems,
-                future);
-
         asyncTaskExecutor.submit(() -> {
             try {
-                logger.debug("Started workload: {}", workloadModel);
-                workloadModel.setFailed(!future.get());
+                future.get();
             } catch (InterruptedException e) {
-                workloadModel.setFailed(true);
                 problems.add((Problem.of(e)));
                 Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
-                workloadModel.setFailed(true);
                 problems.add((Problem.of(e.getCause())));
             } finally {
-                logger.debug("Finished workload: {}", workloadModel);
+                workloadModel.updateStatus(future);
             }
         });
 

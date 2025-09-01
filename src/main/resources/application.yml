@@ -7,7 +7,7 @@ spring:
     ansi:
       enabled: always
   profiles:
-    active: trace
+    active:
   threads:
     virtual:
       enabled: true

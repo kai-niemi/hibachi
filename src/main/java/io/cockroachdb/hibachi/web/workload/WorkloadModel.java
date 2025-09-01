@@ -2,68 +2,52 @@ package io.cockroachdb.hibachi.web.workload;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
+import io.cockroachdb.hibachi.util.DurationUtils;
 import io.cockroachdb.hibachi.web.chart.Metrics;
 import io.cockroachdb.hibachi.web.chart.Problem;
-import io.cockroachdb.hibachi.util.DurationUtils;
 
 public class WorkloadModel {
     private final Integer id;
 
     private final String description;
 
-    private final Metrics metrics;
-
     private final Duration duration;
+
+    private final Metrics metrics;
 
     private final LinkedList<Problem> problems;
 
-    private final CompletableFuture<?> future;
+    private final Instant startTime;
 
-    private final Instant startTime = Instant.now();
-
-    private boolean failed;
+    private WorkloadStatus status;
 
     public WorkloadModel(Integer id,
                          String description,
                          Duration duration,
                          Metrics metrics,
-                         LinkedList<Problem> problems,
-                         CompletableFuture<?> future) {
+                         LinkedList<Problem> problems) {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(duration);
+        Objects.requireNonNull(metrics);
+        Objects.requireNonNull(problems);
+
         this.id = id;
         this.description = description;
         this.duration = duration;
         this.metrics = metrics;
         this.problems = problems;
-        this.future = future;
+        this.startTime = Instant.now();
+        this.status = WorkloadStatus.RUNNING;
     }
 
     public Integer getId() {
         return id;
-    }
-
-    public WorkloadStatus getStatus() {
-        if (failed) {
-            return WorkloadStatus.FAILED;
-        } else if (isRunning()) {
-            return WorkloadStatus.RUNNING;
-        } else if (isCancelled()) {
-            return WorkloadStatus.CANCELLED;
-        } else {
-            return WorkloadStatus.COMPLETED;
-        }
-    }
-
-    public WorkloadModel setFailed(boolean failed) {
-        this.failed = failed;
-        return this;
     }
 
     public String getTitle() {
@@ -71,7 +55,7 @@ public class WorkloadModel {
     }
 
     public List<Problem> getProblems() {
-        return Collections.unmodifiableList(problems.stream().limit(25).toList());
+        return problems.stream().limit(25).toList();
     }
 
     public Metrics getMetrics() {
@@ -101,20 +85,42 @@ public class WorkloadModel {
                 : Duration.between(startTime, Instant.now());
     }
 
+    public WorkloadStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * Called from js
+     */
     public String getStatusBadge() {
         return getStatus().getBadge();
     }
 
+    public void updateStatus(CompletableFuture<?> future) {
+        if (isCancelled()) {
+            return;
+        }
+        if (future.isCompletedExceptionally()) {
+            this.status = WorkloadStatus.FAILED;
+        } else if (!future.isDone()) {
+            this.status = WorkloadStatus.RUNNING;
+        } else if (future.isCancelled()) {
+            this.status = WorkloadStatus.CANCELLED;
+        } else {
+            this.status = WorkloadStatus.COMPLETED;
+        }
+    }
+
     public boolean isRunning() {
-        return !future.isDone();
+        return WorkloadStatus.RUNNING.equals(status);
     }
 
     public boolean isCancelled() {
-        return future.isCancelled();
+        return WorkloadStatus.CANCELLED.equals(status);
     }
 
-    public boolean cancel() {
-        return future.cancel(true);
+    public void cancel() {
+        this.status = WorkloadStatus.CANCELLED;
     }
 
     @Override
@@ -132,25 +138,5 @@ public class WorkloadModel {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
-    }
-
-    public boolean checkCompletion() {
-        if (!future.isDone()) {
-            return false;
-        }
-        awaitCompletion();
-        return true;
-    }
-
-    public void awaitCompletion() {
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (CancellationException e) {
-            // ok
-        } catch (ExecutionException e) {
-            setFailed(true);
-        }
     }
 }

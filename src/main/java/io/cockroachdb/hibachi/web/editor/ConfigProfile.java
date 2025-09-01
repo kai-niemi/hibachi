@@ -30,8 +30,11 @@ public enum ConfigProfile {
         @Override
         public ConfigStrategy configStrategy() {
             return model -> {
-                model.setMaximumPoolSize(model.getNumVCPUs() * 4 / Math.max(1, model.getNumInstances()));
-                model.setMinimumIdle(model.getMaximumPoolSize());
+                final int vCPUs = model.getMultiplier().apply(model.getNumVCPUs())
+                                  / Math.max(1, model.getNumInstances());
+
+                model.setMaximumPoolSize(vCPUs);
+                model.setMinimumIdle(-1);
                 model.setConnectionTimeout(Duration.ofSeconds(30).toSeconds());
                 model.setIdleTimeout(Duration.ofMinutes(10).toSeconds());
                 model.setConnectionTimeout(Duration.ofSeconds(30).toSeconds());
@@ -51,9 +54,11 @@ public enum ConfigProfile {
         @Override
         public ConfigStrategy configStrategy() {
             return model -> {
-                model.setMaximumPoolSize(model.getNumVCPUs() * 4 / Math.max(1, model.getNumInstances()));
-                model.setMinimumIdle(Math.min(model.getMaximumPoolSize(),
-                        (int) Math.ceil(model.getMaximumPoolSize() * 0.25)));
+                final int vCPUs = model.getMultiplier().apply(model.getNumVCPUs())
+                                  / Math.max(1, model.getNumInstances());
+
+                model.setMaximumPoolSize(vCPUs);
+                model.setMinimumIdle(Math.min(vCPUs, (int) Math.ceil(vCPUs * 0.25)));
                 model.setConnectionTimeout(Duration.ofSeconds(30).toSeconds());
                 model.setIdleTimeout(Duration.ofMinutes(10).toSeconds());
                 model.setConnectionTimeout(Duration.ofSeconds(30).toSeconds());
@@ -62,7 +67,6 @@ public enum ConfigProfile {
                 model.setValidationTimeout(Duration.ofSeconds(5).toSeconds());
                 model.setInitializationFailTimeout(Duration.ofSeconds(1).toSeconds());
                 model.setIsolation(Isolation.SERIALIZABLE);
-                model.setValidationQuery("select version()");
                 model.setAutoCommit(true);
                 model.setReadOnly(false);
                 return model;

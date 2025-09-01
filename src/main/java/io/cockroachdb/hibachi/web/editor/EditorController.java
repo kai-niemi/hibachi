@@ -1,15 +1,15 @@
 package io.cockroachdb.hibachi.web.editor;
 
+import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.postgresql.PGProperty;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.ui.Model;
@@ -24,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.validation.Valid;
 
 import io.cockroachdb.hibachi.config.ClosableDataSource;
@@ -31,6 +34,9 @@ import io.cockroachdb.hibachi.web.common.MessagePublisher;
 import io.cockroachdb.hibachi.web.common.Toast;
 import io.cockroachdb.hibachi.web.common.TopicName;
 import io.cockroachdb.hibachi.web.common.WebController;
+import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
+import io.cockroachdb.hibachi.web.editor.model.HikariConfigModel;
+import io.cockroachdb.hibachi.web.editor.model.RootModel;
 
 @WebController
 @RequestMapping("/editor")
@@ -38,10 +44,41 @@ import io.cockroachdb.hibachi.web.common.WebController;
 public class EditorController {
     public static final String DEFAULT_VALIDATION_QUERY = "select version()";
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    public static HikariConfigModel toHikariModel(ConfigModel model) throws IllegalArgumentException {
+        HikariConfigModel config = new HikariConfigModel();
+        config.setPoolName(model.getSlot().getName());
+        config.setMaximumPoolSize(model.getMaximumPoolSize());
+
+        // Can't set -1 even if it's the default
+        if (model.getMinimumIdle() >= 0) {
+            config.setMinimumIdle(model.getMinimumIdle());
+        }
+
+        config.setIdleTimeout(Duration.ofSeconds(model.getIdleTimeout()).toMillis());
+        config.setMaxLifetime(Duration.ofSeconds(model.getMaxLifetime()).toMillis());
+        config.setValidationTimeout(Duration.ofSeconds(model.getValidationTimeout()).toMillis());
+        config.setConnectionTimeout(Duration.ofSeconds(model.getConnectionTimeout()).toMillis());
+        config.setInitializationFailTimeout(Duration.ofSeconds(model.getInitializationFailTimeout()).toMillis());
+
+        config.setTransactionIsolation("TRANSACTION_" + model.getIsolation().name().toUpperCase());
+        config.setConnectionTestQuery(model.getValidationQuery());
+        config.setAutoCommit(model.isAutoCommit());
+        config.setReadOnly(model.isReadOnly());
+
+        if (model.isReWriteBatchedInserts()) {
+            config.addDataSourceProperty(PGProperty.REWRITE_BATCHED_INSERTS.getName(), true);
+        }
+
+        if (StringUtils.hasLength(model.getAppName())) {
+            config.addDataSourceProperty(PGProperty.APPLICATION_NAME.getName(), model.getAppName());
+        }
+
+        return config;
+    }
 
     @Autowired
-    private YamlObjectMapperHelper yamlObjectMapperHelper;
+    @Qualifier("yamlObjectMapper")
+    private ObjectMapper yamlObjectMapper;
 
     @Autowired
     private ApplicationEventPublisher applicationEventPublisher;
@@ -55,7 +92,7 @@ public class EditorController {
     @ModelAttribute("configModel")
     public ConfigModel configModelForm() {
         ConfigModel form = new ConfigModel();
-        form.setNumVCPUs(3*8);
+        form.setNumVCPUs(3 * 8);
         form.setNumInstances(1);
         form.setConnectionLifeTimeSeconds(300L);
         form.setMultiplier(Multiplier.X4);
@@ -86,7 +123,7 @@ public class EditorController {
                                                        Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
-            return ()-> "editor";
+            return () -> "editor";
         }
 
         return () -> {
@@ -113,13 +150,13 @@ public class EditorController {
                                                       Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
-            return ()-> "editor";
+            return () -> "editor";
         }
 
         return () -> {
             try {
                 DataSourceModel dataSourceModel = DataSourceModel.builder()
-                        .withHikariConfig(HikariConfigModel.from(configModel))
+                        .withHikariConfig(toHikariModel(configModel))
                         .withDriverClassName("org.postgresql.Driver")
                         .withUrl(configModel.getUrl())
                         .withUsername(configModel.getUserName())
@@ -127,7 +164,12 @@ public class EditorController {
                         .withTraceLogging(configModel.isTraceLogging())
                         .build();
 
-                configModel.setApplicationModelYaml(yamlObjectMapperHelper.mapToYaml(RootModel.of(dataSourceModel)));
+                try {
+                    String yaml = yamlObjectMapper.writeValueAsString(RootModel.of(dataSourceModel));
+                    configModel.setApplicationModelYaml(yaml);
+                } catch (JsonProcessingException e) {
+                    configModel.setApplicationModelYaml(e.toString());
+                }
             } catch (IllegalArgumentException e) {
                 bindingResult.addError(new ObjectError("globalError", e.getMessage()));
             }
@@ -149,11 +191,11 @@ public class EditorController {
                                                Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
-            return ()-> "editor";
+            return () -> "editor";
         }
 
         return () -> {
-            HikariConfigModel hikariConfig = HikariConfigModel.from(configModel);
+            HikariConfigModel hikariConfig = toHikariModel(configModel);
             hikariConfig.setReadOnly(true);
 
             try (ClosableDataSource dataSource = dataSourceFactory.apply(DataSourceModel.builder()
@@ -198,13 +240,13 @@ public class EditorController {
                                           Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
-            return ()-> "editor";
+            return () -> "editor";
         }
 
         return () -> {
             try {
                 DataSource dataSource = dataSourceFactory.apply(DataSourceModel.builder()
-                        .withHikariConfig(HikariConfigModel.from(configModel))
+                        .withHikariConfig(toHikariModel(configModel))
                         .withDriverClassName("org.postgresql.Driver")
                         .withUrl(configModel.getUrl())
                         .withUsername(configModel.getUserName())
