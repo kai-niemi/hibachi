@@ -1,4 +1,4 @@
-≈[![Java CI](https://github.com/kai-niemi/hibachi/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/kai-niemi/hibachi/actions/workflows/maven.yml)
+[![Java CI](https://github.com/kai-niemi/hibachi/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/kai-niemi/hibachi/actions/workflows/maven.yml)
 
 <!-- TOC -->
 * [Introduction](#introduction)
@@ -11,21 +11,27 @@
 * [Terms of Use](#terms-of-use)
 <!-- TOC -->
 
-# Introduction
+# About
 
-A Hikari Connection Pool configuration tool for CockroachDB.
+<img  align="left" src="logo.png" alt="" width="32"/> 
+
+A visual Hikari Connection Pool configuration and sandbox testing
+tool for CockroachDB.
 
 Features:
 
-- Editor for configuring pool properties using profiles.
-- Run sample SQL workloads
+- Editor for configuring pool properties using profiles
+- Run sample SQL workloads via JDBC
 - Visualize pool and workload metrics
+
+Screenshot:
+
+![demo.png](demo.png)
 
 ## Compatibility
 
 - JDK21+
-- MacOS (main platform)
-- Linux
+- MacOS / Linux
 - CockroachDB
 
 # Building and Running
