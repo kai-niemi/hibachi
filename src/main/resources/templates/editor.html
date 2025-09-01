@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Hibachi :: Editor</title>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"></link>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/abbott.min.css"></link>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/dracula.min.css"></link>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var formModel = /*[[${form}]]*/ "dummy";
+        /*]]>*/
+    </script>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+    <div th:replace="~{fragments/toast :: toast}"></div>
+
+    <div class="py-2 m-0 rounded bg-body-tertiary">
+        <div class="container-fluid">
+            <h3>Configuration Editor</h3>
+            <hr>
+
+            <div class="alert alert-info align-items-center alert-dismissible fade show" role="alert"
+                 th:if="${testSuccess}">
+                <h4 class="alert-heading">
+                    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Info:" width="1em" height="1em">
+                        <use xlink:href="#info-fill"/>
+                    </svg>
+                    Success
+                </h4>
+                <p th:text="${testSuccess}"></p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="alert alert-danger align-items-center alert-dismissible fade show" role="alert"
+                 th:if="${testFailure}">
+                <h4 class="alert-heading">
+                    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Info:" width="1em" height="1em">
+                        <use xlink:href="#exclamation-triangle-fill"/>
+                    </svg>
+                    Failure
+                </h4>
+                <p th:text="${testFailure}"></p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="alert alert-warning align-items-center alert-dismissible fade show" role="alert"
+                 th:if="${#lists.size(#fields.errors('configModel.*')) > 0}">
+                <h4 class="alert-heading">
+                    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Info:" width="1em" height="1em">
+                        <use xlink:href="#exclamation-triangle-fill"/>
+                    </svg>
+                    There are errors
+                </h4>
+                <p>Please correct the following issues:</p>
+                <hr>
+                <ul>
+                    <li th:each="err : ${#fields.errors('configModel.*')}" th:text="${err}"/>
+                </ul>
+            </div>
+
+            <form th:action="@{/editor}" th:object="${configModel}" method="post" id="editorForm" class="form-floating">
+                <div class="row g-4">
+                    <!-- Left side -->
+                    <div class="col">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-3">
+                            <button name="action" value="reset" type="submit" class="btn btn-secondary"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Reset configuration">Reset
+                            </button>
+
+                            <div class="vr"></div>
+
+                            <button name="action" value="apply" type="submit" class="btn btn-primary"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Apply configuration profile to pool properties">Apply
+                            </button>
+
+                            <button name="action" value="validate" type="submit" class="btn btn-warning"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Validate pool properties and execute test query">Test
+                            </button>
+
+                            <div class="vr"></div>
+
+                            <button name="action" value="generate" type="submit" class="btn btn-info"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Generate application.yml">Generate
+                            </button>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="text-body-secondary">Cluster information</h5>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{numVCPUs}"
+                                           th:value="${numVCPUs}"
+                                           type="number" class="form-control"
+                                           id="numVCPUs" placeholder="64"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Sum of all vCPUs in the CockroachDB cluster">
+                                    <label for="numVCPUs">Number of vCPUs (<code>int</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{connectionLifeTimeSeconds}"
+                                           th:value="${connectionLifeTimeSeconds}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Connection life time imposed by database or load balancer"
+                                           id="connectionLifeTimeSeconds">
+                                    <label for="connectionLifeTimeSeconds">Database connection lifetime
+                                        (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{numInstances}"
+                                           th:value="${numInstances}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Total number of connection pool instances, usually 1:1 mapping with app instances"
+                                           id="numInstances">
+                                    <label for="numInstances">Number of application / pool instances (<code>int</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <select th:field="*{configProfile}" id="configProfile" class="form-select"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Configuration strategy to use when calculating pool size and timeouts"
+                                            aria-label="Default select">
+                                        <option th:each="cp : ${T(io.cockroachdb.hibachi.web.editor.ConfigProfile).values()}"
+                                                th:value="${cp}"
+                                                th:text="${cp.displayValue}"></option>
+                                    </select>
+                                    <label for="configProfile">Configuration profile</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 align-items-center mb-3">
+                            <div class="col-auto">
+                                <label class="col-form-label">vCPU ratio</label>
+                            </div>
+                            <div class="col-auto">
+                                <div class="btn-group" role="group">
+                                    <div th:each="m: ${T(io.cockroachdb.hibachi.web.editor.Multiplier).values()}">
+                                        <input class="btn-check" type="radio" autocomplete="off"
+                                               data-bs-toggle="tooltip" data-bs-placement="top"
+                                               title="vCPUs multiplier for max pool size"
+                                               th:field="*{multiplier}"
+                                               th:value="${m.name()}">
+                                        <label th:for="${#ids.prev('multiplier')}"
+                                               class="btn btn-outline-primary" th:text="${m.displayValue}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="text-body-secondary">Connection pool properties</h5>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{maximumPoolSize}"
+                                           th:value="${maximumPoolSize}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Maximum size that the pool is allowed to reach, including both idle and in-use connections"
+                                           id="maximumPoolSize">
+                                    <label for="maximumPoolSize">Maximum pool size (<code>int</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{minimumIdle}"
+                                           th:value="${minimumIdle}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Minimum number of idle connections to maintain in the pool"
+                                           id="minimumIdle">
+                                    <label for="minimumIdle">Minimum pool size (<code>int</code>):</label>
+                                </div>
+                            </div>
+                        </div>
+
+<!--                        <h5 class="text-body-secondary">Pool timeouts</h5>-->
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{connectionTimeout}"
+                                           th:value="${connectionTimeout}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Maximum time a client thread will wait for a connection from the pool"
+                                           id="connectionTimeout">
+                                    <label for="connectionTimeout">Connection timeout (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{validationTimeout}"
+                                           th:value="${validationTimeout}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Maximum time a connection will be tested for liveness"
+                                           id="validationTimeout">
+                                    <label for="validationTimeout">Validation timeout (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{idleTimeout}"
+                                           th:value="${idleTimeout}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Maximum time a connection is allowed to idle in the pool"
+                                           id="idleTimeout">
+                                    <label for="appName">Idle timeout (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{maxLifetime}"
+                                           th:value="${maxLifetime}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Maximum time a connection is allowed to be in the pool until retired (unless in-use)"
+                                           id="maxLifetime">
+                                    <label for="maxLifetime">Max lifetime (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{keepAliveTime}"
+                                           th:value="${keepAliveTime}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Time interval for keeping a connection alive to prevent it from being timed out by the database or network infrastructure"
+                                           id="keepAliveTime">
+                                    <label for="appName">Keep-alive time (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{initializationFailTimeout}"
+                                           th:value="${initializationFailTimeout}"
+                                           type="number" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Duration to attempt to acquire an initial connection applied after connection timeout"
+                                           id="initializationFailTimeout">
+                                    <label for="appName">Initialization fail timeout (<code>seconds</code>):</label>
+                                </div>
+                            </div>
+                        </div>
+
+<!--                        <h5 class="text-body-secondary">Other</h5>-->
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <select th:field="*{isolation}" id="isolationLevel" class="form-select"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Default transaction isolation level of connections returned from the pool">
+                                        <option th:each="level : ${T(org.springframework.transaction.annotation.Isolation).values()}"
+                                                th:value="${level}"
+                                                th:text="${level.name() + ' (' + level.value() + ')'}"></option>
+                                    </select>
+                                    <label for="isolationLevel">Isolation level</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{validationQuery}"
+                                           th:value="${validationQuery}"
+                                           type="text" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Connection validation query"
+                                           id="validationQuery">
+                                    <label for="validationQuery">Validation query (<code>sql</code>):</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <div class="form-check my-2">
+                                <input th:field="*{autoCommit}" class="form-check-input" type="checkbox"
+                                       data-bs-toggle="tooltip" data-bs-placement="top"
+                                       title="Controls the default auto-commit behavior of connections returned from the pool"
+                                       id="autoCommit">
+                                <label class="form-check-label" for="autoCommit">
+                                    Auto-commit enabled
+                                </label>
+                            </div>
+                            <div class="form-check my-2">
+                                <input th:field="*{readOnly}" class="form-check-input" type="checkbox"
+                                       data-bs-toggle="tooltip" data-bs-placement="top"
+                                       title="Controls whether connections obtained from the pool are in read-only mode by default"
+                                       id="readOnly">
+                                <label class="form-check-label" for="readOnly">
+                                    Read-only enabled
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="text-body-secondary">Datasource properties</h5>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{userName}"
+                                           th:value="${userName}"
+                                           type="text" class="form-control" placeholder=""
+                                           id="userName">
+                                    <label for="userName">User (<code>text</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{password}"
+                                           th:value="${password}"
+                                           type="password" class="form-control" placeholder=""
+                                           id="password">
+                                    <label for="password">Password (<code>text</code>):</label>
+                                </div>
+                            </div>
+
+                            <div class="form-floating">
+                                <input th:field="*{url}"
+                                       th:value="${url}"
+                                       type="text" class="form-control" placeholder=""
+                                       id="url">
+                                <label for="url">URL (<code>text</code>):</label>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input th:field="*{appName}"
+                                           th:value="${appName}"
+                                           type="text" class="form-control" placeholder=""
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Application name for auditability in logs and DB console"
+                                           id="appName">
+                                    <label for="appName">Application name (<code>text</code>):</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                            </div>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <div class="form-check my-2">
+                                <input th:field="*{reWriteBatchedInserts}" class="form-check-input" type="checkbox"
+                                       data-bs-toggle="tooltip" data-bs-placement="top"
+                                       title="Fold batch inserts to multi-value inserts to improve performance (pgJDBC)"
+                                       id="reWriteBatchedInserts">
+                                <label class="form-check-label" for="reWriteBatchedInserts">
+                                    Rewrite batched inserts
+                                </label>
+                            </div>
+                            <div class="form-check my-2">
+                                <input th:field="*{traceLogging}" class="form-check-input" type="checkbox"
+                                       data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="Enable datasource SQL trace logging (verbose)"
+                                       id="traceLogging">
+                                <label class="form-check-label" for="traceLogging">
+                                    Trace logging
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row g-3 align-items-center mb-3">
+                            <div class="col-auto">
+                                <button name="action" value="pin" type="submit" class="btn btn-success"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Create a datasource and pin it to selected slot">Pin
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <label class="col-form-label">Slot</label>
+                            </div>
+                            <div class="col-auto">
+                                <div class="btn-group" role="group">
+                                    <div th:each="s: ${configModel.slots}">
+                                        <input class="btn-check" type="radio" autocomplete="off"
+                                               th:field="*{slot}"
+                                               th:value="${s.getName()}">
+                                        <label th:for="${#ids.prev('slot')}"
+                                               th:class="${s.getClassName()}"
+                                               th:text="${s.getName()}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right side-->
+
+                    <div class="col">
+                        <h5 class="text-body-secondary">application.yml</h5>
+                        <div style="height: 93%">
+                            <textarea id="modelEditor" name="modelEditor" class="form-control"
+                                      th:field="*{applicationModelYaml}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script language="javascript" type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+<script language="javascript" type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/yaml/yaml.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.13/jquery-ui.js"></script>
+<script src="https://code.jquery.com/color/jquery.color-2.2.0.js"></script>
+
+<script src="/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+
+<script th:src="@{/js/color-modes.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/editor.js}"></script>
+
+</body>
+</html>

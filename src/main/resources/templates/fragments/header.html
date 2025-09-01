@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+<head>
+    <meta charset="UTF-8">
+    <title>Hibachi</title>
+</head>
+<body>
+
+<header data-bs-theme="dark" th:fragment="header">
+    <div class="px-3 py-2 text-bg-dark border-bottom">
+        <div class="container-fluid">
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <a th:href="@{/}" class="d-flex align-items-center my-2 my-lg-0 me-lg-auto text-white text-decoration-none fs-4">
+                    <img class="bi me-2" height="32" th:src="@{/images/logo_mark_white.png}">
+                    <strong>Hikari Connection Pool Configurator</strong>
+                </a>
+
+                <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
+                    <li>
+                        <a th:href="@{/}" class="nav-link text-secondary">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#home"/></svg>
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/editor}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#edit"/></svg>
+                            Editor
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/workload}" class="nav-link text-white">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#speedometer2"/></svg>
+                            Workloads
+                        </a>
+                    </li>
+
+                    <li>
+                        <a class="nav-link dropdown-toggle text-white" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#grid"/></svg>
+                            Metrics
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a th:href="@{/chart/pool}" class="dropdown-item">Pool Metrics</a></li>
+                            <li><a th:href="@{/chart/workload}" class="dropdown-item">Workload Metrics</a></li>
+                            <li><a th:href="@{/chart/vm}" class="dropdown-item">System Metrics</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a th:href="@{/api/actuator}" class="dropdown-item" target="_blank">Actuator Index</a></li>
+                        </ul>
+                    </li>
+
+                    <li>
+                        <a class="nav-link dropdown-toggle text-white" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#people-circle"/></svg>
+                            Help
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="https://cockroachlabs.cloud/" class="dropdown-item text-success"
+                                   target="_blank">Sign In</a></li>
+                            <li><a href="https://www.cockroachlabs.com/" class="dropdown-item" target="_blank">Cockroach
+                                Labs</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a href="https://github.com/kai-niemi/hibachi" class="dropdown-item" target="_blank">Follow
+                                on Github</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+package io.cockroachdb.hibachi.web.workload;
+
+import java.lang.reflect.UndeclaredThrowableException;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.NestedExceptionUtils;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.dao.NonTransientDataAccessException;
+import org.springframework.dao.TransientDataAccessException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.TransactionException;
+
+import io.cockroachdb.hibachi.web.chart.Metrics;
+import io.cockroachdb.hibachi.web.chart.Problem;
+
+@Component
+public class WorkloadExecutor {
+    private static void backoffDelayWithJitter(int inc) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(
+                    Math.min((long) (Math.pow(2, inc) + Math.random() * 1000), 5000));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static final AtomicInteger monotonicId = new AtomicInteger();
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    @Autowired
+    @Qualifier("workloadAsyncTaskExecutor")
+    private AsyncTaskExecutor asyncTaskExecutor;
+
+    public WorkloadModel submitWorkloadTask(String description, Duration duration, Runnable task) {
+        final Metrics metrics = Metrics.empty();
+        final LinkedList<Problem> problems = new LinkedList<>();
+        final Instant stopTime = Instant.now().plus(duration);
+
+        final CompletableFuture<Boolean> future = asyncTaskExecutor.submitCompletable(() -> {
+            final AtomicInteger retries = new AtomicInteger();
+
+            while (Instant.now().isBefore(stopTime)) {
+                if (Thread.interrupted()) {
+                    logger.warn("Thread interrupted - bailing out");
+                    break;
+                }
+
+                final Instant callTime = Instant.now();
+
+                try {
+                    task.run();
+                    retries.set(0);
+                    metrics.markSuccess(Duration.between(callTime, Instant.now()));
+                } catch (Exception ex) {
+                    Duration callDuration = Duration.between(callTime, Instant.now());
+
+                    Throwable cause = NestedExceptionUtils.getMostSpecificCause(ex);
+                    Problem problem = Problem.of(cause);
+
+                    if (cause instanceof SQLException) {
+                        String sqlState = ((SQLException) cause).getSQLState();
+                        if (problem.isTransient()) {
+                            logger.debug("Transient SQL exception [%s]: [%s]".formatted(sqlState, cause));
+                        } else {
+                            logger.debug("Non-transient SQL exception [%s]: [%s]".formatted(sqlState, cause));
+                        }
+                    } else if (cause instanceof TransientDataAccessException) {
+                        logger.debug("Transient data access exception: [%s]".formatted(ex));
+                    } else if (cause instanceof NonTransientDataAccessException
+                               || cause instanceof TransactionException) {
+                        logger.debug("Non-transient exception: [%s]".formatted(ex));
+                    } else {
+                        throw new UndeclaredThrowableException(ex);
+                    }
+
+                    metrics.markFail(callDuration, problem.isTransient());
+                    problems.add(problem);
+
+                    backoffDelayWithJitter(retries.incrementAndGet());
+                }
+            }
+
+            return problems.isEmpty();
+        });
+
+        final WorkloadModel workloadModel = new WorkloadModel(
+                monotonicId.incrementAndGet(),
+                description,
+                duration,
+                metrics,
+                problems,
+                future);
+
+        asyncTaskExecutor.submit(() -> {
+            try {
+                logger.debug("Started workload: {}", workloadModel);
+                workloadModel.setFailed(!future.get());
+            } catch (InterruptedException e) {
+                workloadModel.setFailed(true);
+                problems.add((Problem.of(e)));
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                workloadModel.setFailed(true);
+                problems.add((Problem.of(e.getCause())));
+            } finally {
+                logger.debug("Finished workload: {}", workloadModel);
+            }
+        });
+
+        return workloadModel;
+    }
+}

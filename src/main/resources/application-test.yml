@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:26257/defaultdb?sslmode=disable
+    username: root
+    password:
+    name: Hibachi
+    hikari:
+      pool-name: hibachi-pool
+      connection-init-sql: SELECT 1
+      initialization-fail-timeout: -1
+      connection-timeout: 5000
+      validation-timeout: 20000
+      max-lifetime: 180000
+      idle-timeout: 60000
+      maximum-pool-size: 64
+      minimum-idle: 0
+      transaction-isolation: TRANSACTION_SERIALIZABLE
+      data-source-properties:
+        reWriteBatchedInserts: true
+        application_name: Hibachi

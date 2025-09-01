@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Hibachi</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/main.css" rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/theme :: theme}"></div>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <svg th:replace="~{fragments/symbols :: symbols}"></svg>
+
+    <div class="px-4 pt-3 my-3 text-center">
+        <div class="col-lg-6 mx-auto">
+            <h1 class="display-5 fw-bold text-body-emphasis">Welcome to Hibachi</h1>
+
+            <p class="lead mb-4">
+                Hibachi (火鉢 – ひばち) is a tool for cooking perfect
+                <a href="https://github.com/brettwooldridge/HikariCP" target="_blank">Hikari Connection Pool</a>
+                configurations for CockroachDB.
+            </p>
+        </div>
+    </div>
+
+    <div class="thick-divider"></div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.13/jquery-ui.js"></script>
+<script src="https://code.jquery.com/color/jquery.color-2.2.0.js"></script>
+
+<script src="/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+
+<script th:src="@{/js/color-modes.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+
+</body>
+</html>
