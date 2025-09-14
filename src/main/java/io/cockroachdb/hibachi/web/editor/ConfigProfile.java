@@ -69,6 +69,7 @@ public enum ConfigProfile {
                 model.setIsolation(Isolation.SERIALIZABLE);
                 model.setAutoCommit(true);
                 model.setReadOnly(false);
+
                 return model;
             };
         }

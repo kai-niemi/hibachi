@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -19,6 +20,7 @@ import org.springframework.dao.annotation.PersistenceExceptionTranslationPostPro
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
 
 import net.ttddyy.dsproxy.listener.logging.DefaultQueryLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
@@ -26,6 +28,7 @@ import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 
 import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -41,6 +44,9 @@ public class DataSourceConfig implements BeanClassLoaderAware {
         this.classLoader = classLoader;
     }
 
+    @Autowired
+    private MeterRegistry registry;
+
     @Bean
     @Lazy
     @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -50,6 +56,8 @@ public class DataSourceConfig implements BeanClassLoaderAware {
             config.setJdbcUrl(model.getUrl());
             config.setUsername(model.getUserName());
             config.setPassword(model.getPassword());
+
+            config.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(registry));
 
             HikariDataSource dataSource = DataSourceBuilder.create(classLoader)
                     .type(HikariDataSource.class)

@@ -20,14 +20,12 @@
 
     <div class="py-2 m-0 rounded bg-body-tertiary">
         <div class="container-fluid">
-            <h3>Connection Pool Metrics</h3>
+            <h3 th:text="'Pool Slot \'' + ${name} + '\''"></h3>
             <hr>
 
             <div class="table-responsive-xl">
                 <canvas id="chart-container-connection-pool-1" style="max-height: 300px"></canvas>
                 <canvas id="chart-container-connection-pool-2" style="max-height: 300px"></canvas>
-                <canvas id="chart-container-connection-pool-3" style="max-height: 300px"></canvas>
-                <canvas id="chart-container-connection-pool-4" style="max-height: 300px"></canvas>
             </div>
         </div>
     </div>

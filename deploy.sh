@@ -12,7 +12,7 @@ if [ "$(whoami)" == "root" ]; then
     exit 1
 fi
 
-if [ -z "${CLUSTER}" ]; then
+if [ -z "${CLUSTER}" ] t; then
   fn_echo_warning "No \$CLUSTER id variable set!"
   echo "Use: export CLUSTER='your-cluster-id'"
   exit 1

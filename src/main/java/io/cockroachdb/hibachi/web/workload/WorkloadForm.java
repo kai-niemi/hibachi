@@ -18,14 +18,37 @@ public class WorkloadForm {
     @Min(value = 10, message = "Duration must be > 10s")
     private Long duration;
 
+    @NotNull(message = "Pause is empty")
+    @Min(value = 0, message = "Pause must be >= 0")
+    private Long pause;
+
+    @NotNull(message = "Pause variation is empty")
+    @Min(value = 0, message = "Pause variation must be >= 0")
+    private Long pauseVariation;
+
     @NotNull(message = "Thread count is empty")
     @Min(value = 1, message = "Thread count must be > 0")
     private Integer count = 1;
 
     private List<Slot> slots = List.of();
 
-//    @NotNull(message = "Datasource slot must be selected")
     private Slot slot;
+
+    public Long getPause() {
+        return pause;
+    }
+
+    public void setPause(Long pause) {
+        this.pause = pause;
+    }
+
+    public Long getPauseVariation() {
+        return pauseVariation;
+    }
+
+    public void setPauseVariation(Long pauseVariation) {
+        this.pauseVariation = pauseVariation;
+    }
 
     public List<Slot> getSlots() {
         return slots;

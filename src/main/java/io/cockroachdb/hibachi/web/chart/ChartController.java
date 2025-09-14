@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.jdbc.metadata.HikariDataSourcePoolMetadata;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Pageable;
@@ -21,17 +20,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.zaxxer.hikari.HikariDataSource;
 
-import io.cockroachdb.hibachi.web.editor.DataSourceCreatedEvent;
 import io.cockroachdb.hibachi.web.common.MessagePublisher;
 import io.cockroachdb.hibachi.web.common.TopicName;
 import io.cockroachdb.hibachi.web.common.WebController;
+import io.cockroachdb.hibachi.web.editor.DataSourceCreatedEvent;
 import io.cockroachdb.hibachi.web.workload.WorkloadManager;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * Chart JS data paint callback methods.
@@ -55,8 +53,6 @@ public class ChartController {
     @Qualifier("workloadTimeSeries")
     private TimeSeries workloadTimeSeries;
 
-    private final Map<String, TimeSeries> connectionPoolTimeSeries = new HashMap<>();
-
     @Autowired
     private WorkloadManager workloadManager;
 
@@ -64,7 +60,11 @@ public class ChartController {
     private MessagePublisher messagePublisher;
 
     @Autowired
-    private MeterRegistry meterRegistry;
+    private  MetricsRegistrator metricsRegistrator;
+
+    private final Map<String, TimeSeries> connectionPoolGaugeTimeSeries = new HashMap<>();
+
+    private final Map<String, TimeSeries> connectionPoolTimeTimeSeries = new HashMap<>();
 
     private final Duration samplePeriod = Duration.ofMinutes(5);
 
@@ -82,7 +82,10 @@ public class ChartController {
         cpuTimeSeries.snapshotDataPoints(samplePeriod);
         memoryTimeSeries.snapshotDataPoints(samplePeriod);
         workloadTimeSeries.snapshotDataPoints(samplePeriod);
-        connectionPoolTimeSeries.values()
+
+        connectionPoolGaugeTimeSeries.values()
+                .forEach(timeSeries -> timeSeries.snapshotDataPoints(samplePeriod));
+        connectionPoolTimeTimeSeries.values()
                 .forEach(timeSeries -> timeSeries.snapshotDataPoints(samplePeriod));
     }
 
@@ -91,54 +94,42 @@ public class ChartController {
         try {
             HikariDataSource dataSource = event.getDataSource().unwrap(HikariDataSource.class);
             Objects.requireNonNull(dataSource.getPoolName(), "pool name is required");
-            connectionPoolTimeSeries.put(dataSource.getPoolName().toLowerCase(), registerDataSource(dataSource));
+
+            connectionPoolGaugeTimeSeries.put(dataSource.getPoolName().toLowerCase(),
+                    metricsRegistrator.registerDataSourceGaugeMeters(dataSource));
+
+            connectionPoolTimeTimeSeries.put(dataSource.getPoolName().toLowerCase(),
+                    metricsRegistrator.registerDataSourceTimeMeters(dataSource));
         } catch (SQLException e) {
             throw new ApplicationContextException("", e);
         }
     }
 
-    private TimeSeries registerDataSource(HikariDataSource dataSource) {
-        final HikariDataSourcePoolMetadata metadata = new HikariDataSourcePoolMetadata(dataSource);
-
-        Gauge.builder("hibachi.pool.connections.active", metadata, HikariDataSourcePoolMetadata::getActive)
-                .tag("name", dataSource.getPoolName())
-                .strongReference(true)
-                .description("Active connections")
-                .register(meterRegistry);
-        Gauge.builder("hibachi.pool.connections.idle", metadata, HikariDataSourcePoolMetadata::getIdle)
-                .tag("name", dataSource.getPoolName())
-                .strongReference(true)
-                .description("Idle connections")
-                .register(meterRegistry);
-        Gauge.builder("hibachi.pool.connections.min", metadata, HikariDataSourcePoolMetadata::getMin)
-                .tag("name", dataSource.getPoolName())
-                .strongReference(true)
-                .description("Min connections")
-                .register(meterRegistry);
-        Gauge.builder("hibachi.pool.connections.max", metadata, HikariDataSourcePoolMetadata::getMax)
-                .tag("name", dataSource.getPoolName())
-                .strongReference(true)
-                .description("Max connections")
-                .register(meterRegistry);
-
-        return new TimeSeries(meterRegistry, List.of(
-                        meterRegistry.find("hibachi.pool.connections.active").tag("name", dataSource.getPoolName()),
-                        meterRegistry.find("hibachi.pool.connections.idle").tag("name", dataSource.getPoolName()),
-                        meterRegistry.find("hibachi.pool.connections.min").tag("name", dataSource.getPoolName()),
-                        meterRegistry.find("hibachi.pool.connections.max").tag("name", dataSource.getPoolName())
-        ));
-    }
-
     @GetMapping("/pool")
-    public Callable<String> getPoolChartsPage(Model model) {
+    public Callable<String> getPoolChartsPage(@RequestParam("name") String name,
+                                              Model model) {
+        model.addAttribute("name",name);
         return () -> "pool-charts";
     }
 
-    @GetMapping(value = "/pool/data-points/{name}",
+    @GetMapping(value = "/pool/data-points/gauge",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody List<Map<String, Object>> getConnectionPoolDataPoints(@PathVariable("name") String name) {
-        if (connectionPoolTimeSeries.containsKey(name)) {
-            return connectionPoolTimeSeries.get(name).getDataPoints();
+    public @ResponseBody List<Map<String, Object>> getConnectionPoolGaugeDataPoints(
+            @RequestParam("name") String name) {
+        name = name.toLowerCase();
+        if (connectionPoolGaugeTimeSeries.containsKey(name)) {
+            return connectionPoolGaugeTimeSeries.get(name).getDataPoints();
+        }
+        return List.of();
+    }
+
+    @GetMapping(value = "/pool/data-points/time",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody List<Map<String, Object>> getConnectionPoolTimeDataPoints(
+            @RequestParam("name") String name) {
+        name = name.toLowerCase();
+        if (connectionPoolTimeTimeSeries.containsKey(name)) {
+            return connectionPoolTimeTimeSeries.get(name).getDataPoints();
         }
         return List.of();
     }

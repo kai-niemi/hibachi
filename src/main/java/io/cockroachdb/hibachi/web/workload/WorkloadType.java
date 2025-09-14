@@ -9,6 +9,7 @@ import io.cockroachdb.hibachi.repository.DeleteOne;
 import io.cockroachdb.hibachi.repository.FullScan;
 import io.cockroachdb.hibachi.repository.InsertBatch;
 import io.cockroachdb.hibachi.repository.InsertOne;
+import io.cockroachdb.hibachi.repository.OpenClose;
 import io.cockroachdb.hibachi.repository.PointRead;
 import io.cockroachdb.hibachi.repository.SelectOne;
 import io.cockroachdb.hibachi.repository.SelectVersion;
@@ -21,7 +22,7 @@ public enum WorkloadType {
             "Open and close connections") {
         @Override
         public Runnable startWorkload(DataSource dataSource) {
-            return new InsertOne(dataSource);
+            return new OpenClose(dataSource);
         }
     },
     singleton_insert("Singleton insert",
@@ -42,24 +43,24 @@ public enum WorkloadType {
             return new InsertBatch(dataSource);
         }
     },
-    point_read_update("Point read and update",
-            true,
-            true,
-            "Point lookup read followed by an update") {
-        @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new UpdateOne(dataSource);
-        }
-    },
-    point_read_delete("Point read and delete",
-            true,
-            true,
-            "Point lookup read followed by a delete") {
-        @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new DeleteOne(dataSource);
-        }
-    },
+//    point_read_update("Point read and update",
+//            true,
+//            true,
+//            "Point lookup read followed by an update") {
+//        @Override
+//        public Runnable startWorkload(DataSource dataSource) {
+//            return new UpdateOne(dataSource);
+//        }
+//    },
+//    point_read_delete("Point read and delete",
+//            true,
+//            true,
+//            "Point lookup read followed by a delete") {
+//        @Override
+//        public Runnable startWorkload(DataSource dataSource) {
+//            return new DeleteOne(dataSource);
+//        }
+//    },
     point_read("Point read",
             false,
             true,
@@ -69,7 +70,7 @@ public enum WorkloadType {
             return new PointRead(dataSource, false);
         }
     },
-    point_read_historical("Point read historical",
+    point_read_historical("Historical point read",
             false,
             true,
             "Single point lookup exact staleness read (follower)") {
@@ -104,42 +105,42 @@ public enum WorkloadType {
         public Runnable startWorkload(DataSource dataSource) {
             return new SelectVersion(dataSource);
         }
-    },
-    random_wait("Random wait",
-            false,
-            false,
-            "Random waits with 5% chance of outliers") {
-        @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return () -> {
-                ThreadLocalRandom random = ThreadLocalRandom.current();
-                try {
-                    if (random.nextDouble(1.0) > 0.95) {
-                        TimeUnit.MILLISECONDS.sleep(random.nextLong(500, 2000));
-                    } else {
-                        TimeUnit.MILLISECONDS.sleep(random.nextLong(0, 10));
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            };
-        }
-    },
-    fixed_wait("Fixed wait",
-            false,
-            false,
-            "Fixed waits of 500ms") {
-        @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return () -> {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(500);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            };
-        }
     };
+//    random_wait("Random wait",
+//            false,
+//            false,
+//            "Random waits with 5% chance of outliers") {
+//        @Override
+//        public Runnable startWorkload(DataSource dataSource) {
+//            return () -> {
+//                ThreadLocalRandom random = ThreadLocalRandom.current();
+//                try {
+//                    if (random.nextDouble(1.0) > 0.95) {
+//                        TimeUnit.MILLISECONDS.sleep(random.nextLong(500, 2000));
+//                    } else {
+//                        TimeUnit.MILLISECONDS.sleep(random.nextLong(0, 10));
+//                    }
+//                } catch (InterruptedException e) {
+//                    Thread.currentThread().interrupt();
+//                }
+//            };
+//        }
+//    },
+//    fixed_wait("Fixed wait",
+//            false,
+//            false,
+//            "Fixed waits of 500ms") {
+//        @Override
+//        public Runnable startWorkload(DataSource dataSource) {
+//            return () -> {
+//                try {
+//                    TimeUnit.MILLISECONDS.sleep(500);
+//                } catch (InterruptedException e) {
+//                    Thread.currentThread().interrupt();
+//                }
+//            };
+//        }
+//    };
 
     private final String displayValue;
 

@@ -81,34 +81,6 @@
                 <div class="row g-4">
                     <!-- Left side -->
                     <div class="col">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-3">
-                            <button name="action" value="reset" type="submit" class="btn btn-secondary"
-                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Reset configuration">Reset
-                            </button>
-
-                            <div class="vr"></div>
-
-                            <button name="action" value="apply" type="submit" class="btn btn-primary"
-                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Apply configuration profile to pool properties">Apply
-                            </button>
-
-                            <button name="action" value="validate" type="submit" class="btn btn-warning"
-                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Validate pool properties and execute test query">Test
-                            </button>
-
-                            <div class="vr"></div>
-
-                            <button name="action" value="generate" type="submit" class="btn btn-info"
-                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Generate application.yml">Generate
-                            </button>
-                        </div>
-
-                        <hr>
-
                         <h5 class="text-body-secondary">Cluster information</h5>
 
                         <div class="row g-2 mb-2">
@@ -164,11 +136,9 @@
                             </div>
                         </div>
 
-                        <div class="row g-3 align-items-center mb-3">
-                            <div class="col-auto">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
                                 <label class="col-form-label">vCPU ratio</label>
-                            </div>
-                            <div class="col-auto">
                                 <div class="btn-group" role="group">
                                     <div th:each="m: ${T(io.cockroachdb.hibachi.web.editor.Multiplier).values()}">
                                         <input class="btn-check" type="radio" autocomplete="off"
@@ -181,11 +151,32 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="col-md-auto">
+                                <button name="action" value="reset" type="submit" class="btn btn-secondary"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Reset configuration">Reset
+                                </button>
+
+                                <div class="vr"></div>
+
+                                <button name="action" value="apply" type="submit" class="btn btn-primary"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Apply configuration profile to pool properties below">Apply
+                                </button>
+                            </div>
                         </div>
 
                         <hr>
 
-                        <h5 class="text-body-secondary">Connection pool properties</h5>
+                        <h5 class="text-body-secondary">Connection pool properties
+                            <a class="icon-link" href="https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#frequently-used"
+                            target="_blank">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                                </svg>
+                            </a>
+                        </h5>
 
                         <div class="row g-2 mb-2">
                             <div class="col-md">
@@ -410,17 +401,9 @@
 
                         <hr>
 
-                        <div class="row g-3 align-items-center mb-3">
-                            <div class="col-auto">
-                                <button name="action" value="pin" type="submit" class="btn btn-success"
-                                        data-bs-toggle="tooltip" data-bs-placement="top"
-                                        title="Create a datasource and pin it to selected slot">Pin
-                                </button>
-                            </div>
-                            <div class="col-auto">
-                                <label class="col-form-label">Slot</label>
-                            </div>
-                            <div class="col-auto">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md">
+                                <label class="col-form-label">Pin to slot</label>
                                 <div class="btn-group" role="group">
                                     <div th:each="s: ${configModel.slots}">
                                         <input class="btn-check" type="radio" autocomplete="off"
@@ -432,10 +415,24 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-auto">
+                            <div class="col-md-auto">
+                                <button name="action" value="pin" type="submit" class="btn btn-success"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Create a datasource and pin it to selected slot">Pin
+                                </button>
+
+                                <div class="vr"></div>
+
+                                <button name="action" value="validate" type="submit" class="btn btn-warning"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Validate pool properties and execute test query">Test
+                                </button>
+                                <button name="action" value="generate" type="submit" class="btn btn-info"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Generate application.yml">Generate
+                                </button>
                             </div>
                         </div>
-
                     </div>
 
                     <!-- Right side-->

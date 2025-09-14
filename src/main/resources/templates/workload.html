@@ -173,29 +173,60 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="workload-type" class="form-label">Type of workload:</label>
-                        <select th:field="*{workloadType}" id="workload-type" class="form-select">
+                        <select th:field="*{workloadType}" id="workload-type" class="form-select"
+                                aria-describedby="helpBlock">
                             <option th:each="wt : ${T(io.cockroachdb.hibachi.web.workload.WorkloadType).values()}"
                                     th:value="${wt}" th:text="${wt.displayValue + ' (' + wt.description + ')'}"></option>
                         </select>
+                        <div id="helpBlock" class="form-text">
+                            Specifies the percentage of connections a toxic will affect. This is most useful for
+                            toxics with a timeout, which would allow X % of connections to timeout.
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="workload-range" class="form-label">Number of threads (1-512):</label>
+
+                    <div class="form-floating mb-3">
                         <input th:field="*{count}"
                                id="workload-range"
                                type="number" class="form-control"
                                min="1" max="512"
                                required>
+                        <label for="workload-range" class="form-label">Number of threads (<code>int</code>):</label>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="workload-duration" class="form-label">Runtime duration (seconds):</label>
+                    <div class="form-floating mb-3">
                         <input th:field="*{duration}"
                                th:value="${duration}"
                                id="workload-duration"
                                type="number" class="form-control"
                                name="Duration"
                                required>
+                        <label for="workload-duration" class="form-label">Runtime duration  (<code>seconds</code>):</label>
                     </div>
+
+                    <div class="form-floating mb-3">
+                        <input th:field="*{pause}"
+                               th:value="${pause}"
+                               type="text" class="form-control"
+                               id="pause" placeholder="150">
+                        <label for="pause">Pause after opening a connection (<code>ms</code>):</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input th:field="*{pauseVariation}"
+                               th:value="${pauseVariation}"
+                               type="text" class="form-control"
+                               id="pauseVariation" placeholder="150">
+                        <label for="pauseVariation">Variation of time delay (<code>ms</code>):</label>
+                    </div>
+
+<!--
+                    <div class="mb-3">
+                        <label for="toxicity" class="form-label">Toxicity factor (0-100%):</label>
+                        <input th:field="*{toxicity}"
+                               type="range" class="form-range" min="0" max="100" step="1" id="toxicity"
+                               aria-describedby="toxicityHelpBlock">
+                    </div>
+-->
 
                     <div class="mb-3">
                         <div class="col-auto">

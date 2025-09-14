@@ -1,5 +1,6 @@
 package io.cockroachdb.hibachi.web.workload;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashMap;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -15,10 +17,14 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -144,8 +150,38 @@ public class WorkloadController {
                 .forEach(value -> {
                     final Runnable workloadTask = workloadType
                             .startWorkload(dataSource);
+
+                    final Runnable pauseTask = () -> {
+                        long waitMillis = workloadForm.getPause() + ThreadLocalRandom.current()
+                                .nextLong(workloadForm.getPauseVariation());
+                        try {
+                            workloadTask.run();
+                            TimeUnit.MILLISECONDS.sleep(waitMillis);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    };
+
+//                    DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
+//                    transactionManager.setRollbackOnCommitFailure(true);
+//                    transactionManager.setValidateExistingTransaction(false);
+//
+//                    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+//                    transactionTemplate.setIsolationLevelName("");
+//                    transactionTemplate.executeWithoutResult(transactionStatus -> {
+//                        workloadTask.run();
+//                    });
+//
+//                    jdbcTemplate.execute(new ConnectionCallback<Object>() {
+//                        @Override
+//                        public Object doInConnection(Connection con) throws SQLException, DataAccessException {
+//                            return null;
+//                        }
+//                    });
+
+
                     final WorkloadModel workloadModel = workloadExecutor
-                            .submitWorkloadTask(workloadType.getDescription(), duration, workloadTask);
+                            .submitWorkloadTask(workloadType.getDescription(), duration, pauseTask);
                     workloadManager.addWorkload(workloadModel);
                 });
 

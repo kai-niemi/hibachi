@@ -254,6 +254,18 @@ public class EditorController {
                         .withTraceLogging(configModel.isTraceLogging())
                         .build());
 
+                final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+                String query = configModel.getValidationQuery();
+                if (StringUtils.hasLength(query)) {
+                    Assert.state(query.toUpperCase().startsWith("SELECT "),
+                            "Validation query must start with 'SELECT'");
+                } else {
+                    query = DEFAULT_VALIDATION_QUERY;
+                }
+
+                jdbcTemplate.queryForObject(query, String.class);
+
                 Slot slot = configModel.getSlots()
                         .stream()
                         .filter(x -> x.equals(configModel.getSlot()))

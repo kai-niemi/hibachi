@@ -18,7 +18,7 @@ var borderColors = [
     'rgb(201, 203, 207)'
 ];
 
-const chartConnectionPool1 = new Chart(document.getElementById(
+const chartConnectionPoolGauges = new Chart(document.getElementById(
         "chart-container-connection-pool-1"), {
     type: 'line',
     data: {
@@ -44,13 +44,13 @@ const chartConnectionPool1 = new Chart(document.getElementById(
         plugins: {
             title: {
                 display: true,
-                text: 'Hikari Connection Pool Slot #1'
+                text: 'Connections'
             },
         },
         responsive: true,
     },
 });
-const chartConnectionPool2 = new Chart(document.getElementById(
+const chartConnectionPoolTimes = new Chart(document.getElementById(
         "chart-container-connection-pool-2"), {
     type: 'line',
     data: {
@@ -69,78 +69,14 @@ const chartConnectionPool2 = new Chart(document.getElementById(
             y: {
                 title: {
                     display: true,
-                    text: "Metric (gauge)",
+                    text: "Duration (ms)",
                 },
             },
         },
         plugins: {
             title: {
                 display: true,
-                text: 'Hikari Connection Pool Slot #2'
-            },
-        },
-        responsive: true,
-    },
-});
-const chartConnectionPool3 = new Chart(document.getElementById(
-        "chart-container-connection-pool-3"), {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [],
-    },
-    options: {
-        scales: {
-            x: {
-                type: 'time',
-                time: {
-                    unit: 'minute'
-                },
-                parse: false
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: "Metric (gauge)",
-                },
-            },
-        },
-        plugins: {
-            title: {
-                display: true,
-                text: 'Hikari Connection Pool Slot #3'
-            },
-        },
-        responsive: true,
-    },
-});
-const chartConnectionPool4 = new Chart(document.getElementById(
-        "chart-container-connection-pool-4"), {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [],
-    },
-    options: {
-        scales: {
-            x: {
-                type: 'time',
-                time: {
-                    unit: 'minute'
-                },
-                parse: false
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: "Metric (gauge)",
-                },
-            },
-        },
-        plugins: {
-            title: {
-                display: true,
-                text: 'Hikari Connection Pool Slot #4'
+                text: 'Times'
             },
         },
         responsive: true,
@@ -172,17 +108,13 @@ PoolChartsDashboard.prototype = {
     handleChartsUpdate: function() {
         var _this = this;
 
-        $.getJSON("pool/data-points/one", function(json) {
-            _this.updateChart(chartConnectionPool1, json);
+        const queryString = window.location.search;
+
+        $.getJSON("pool/data-points/gauge" + queryString, function(json) {
+            _this.updateChart(chartConnectionPoolGauges, json);
         });
-        $.getJSON("pool/data-points/two", function(json) {
-            _this.updateChart(chartConnectionPool2, json);
-        });
-        $.getJSON("pool/data-points/three", function(json) {
-            _this.updateChart(chartConnectionPool3, json);
-        });
-        $.getJSON("pool/data-points/four", function(json) {
-            _this.updateChart(chartConnectionPool4, json);
+        $.getJSON("pool/data-points/time" + queryString, function(json) {
+            _this.updateChart(chartConnectionPoolTimes, json);
         });
     },
 

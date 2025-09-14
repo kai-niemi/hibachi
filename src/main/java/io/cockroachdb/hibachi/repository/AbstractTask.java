@@ -15,9 +15,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 public abstract class AbstractTask implements Runnable {
     protected final SampleRepository sampleRepository;
 
-    protected final JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
-    protected final TransactionTemplate transactionTemplate;
+//    protected final TransactionTemplate transactionTemplate;
 
     private final AtomicReference<Optional<SampleEntity>> latestEntity
             = new AtomicReference<>(Optional.empty());
@@ -25,12 +25,6 @@ public abstract class AbstractTask implements Runnable {
     protected AbstractTask(DataSource dataSource) {
         this.sampleRepository = new JdbcSampleRepository(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-
-        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        transactionManager.setRollbackOnCommitFailure(true);
-        transactionManager.setValidateExistingTransaction(false);
-
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
 
         initSchema(dataSource);
     }
