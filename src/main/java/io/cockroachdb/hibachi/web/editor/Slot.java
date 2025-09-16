@@ -1,34 +1,28 @@
 package io.cockroachdb.hibachi.web.editor;
 
-import java.util.Objects;
+public enum Slot {
+    RED("Red", "danger"),
+    GREEN("Green", "success"),
+    BLUE("Blue", "primary"),
+    YELLOW("Yellow", "warning");
 
-public class Slot {
-    public static final Slot ONE = new Slot("One");
+    private final String displayName;
 
-    public static final Slot TWO = new Slot("Two");
-
-    public static final Slot THREE = new Slot("Three");
-
-    public static final Slot FOUR = new Slot("Four");
-
-    private String name;
+    private final String className;
 
     private boolean occupied;
 
-    public Slot(String name) {
-        this.name = name;
+    Slot(String displayName, String className) {
+        this.displayName = displayName;
+        this.className = className;
     }
 
     public String getClassName() {
-        return "btn btn-outline-" + (isOccupied() ?  "warning" : "success");
+        return "btn " + (!isOccupied() ? "btn-outline-" : "btn-") + className;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+    public String getDisplayName() {
+        return displayName;
     }
 
     public boolean isOccupied() {
@@ -37,27 +31,5 @@ public class Slot {
 
     public void setOccupied(boolean occupied) {
         this.occupied = occupied;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Slot slot = (Slot) o;
-        return Objects.equals(name, slot.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(name);
-    }
-
-    @Override
-    public String toString() {
-        return "Slot{" +
-               "name='" + name + '\'' +
-               ", occupied=" + occupied +
-               '}';
     }
 }

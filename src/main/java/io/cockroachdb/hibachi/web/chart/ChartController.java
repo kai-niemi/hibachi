@@ -107,7 +107,7 @@ public class ChartController {
     @GetMapping("/pool")
     public Callable<String> getPoolChartsPage(@RequestParam("name") String name,
                                               Model model) {
-        model.addAttribute("name",name);
+        model.addAttribute("name", name);
         return () -> "pool-charts";
     }
 

@@ -1,5 +1,6 @@
 package io.cockroachdb.hibachi.web.workload;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import org.springframework.validation.annotation.Validated;
@@ -31,7 +32,7 @@ public class WorkloadForm {
     @Min(value = 1, message = "Thread count must be > 0")
     private int count = 1;
 
-    private List<Slot> slots = List.of();
+    private EnumSet<Slot> slots = EnumSet.noneOf(Slot.class);
 
     private Slot slot;
 
@@ -59,11 +60,11 @@ public class WorkloadForm {
         this.waitTimeVariation = waitTimeVariation;
     }
 
-    public List<Slot> getSlots() {
+    public EnumSet<Slot> getSlots() {
         return slots;
     }
 
-    public void setSlots(List<Slot> slots) {
+    public void setSlots(EnumSet<Slot> slots) {
         this.slots = slots;
     }
 

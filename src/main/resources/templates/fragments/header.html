@@ -10,7 +10,8 @@
     <div class="px-3 py-2 text-bg-dark border-bottom">
         <div class="container-fluid">
             <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-                <a th:href="@{/}" class="d-flex align-items-center my-2 my-lg-0 me-lg-auto text-white text-decoration-none fs-4">
+                <a th:href="@{/}"
+                   class="d-flex align-items-center my-2 my-lg-0 me-lg-auto text-white text-decoration-none fs-4">
                     <img class="bi me-2" height="32" th:src="@{/images/logo_mark_white.png}">
                     <strong>Hikari Connection Pool Configurator</strong>
                 </a>
@@ -18,51 +19,66 @@
                 <ul class="nav col-12 col-lg-auto my-2 justify-content-center my-md-0 text-small">
                     <li>
                         <a th:href="@{/}" class="nav-link text-white-50">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#home"/></svg>
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#home"/>
+                            </svg>
                             Home
                         </a>
                     </li>
                     <li>
                         <a th:href="@{/editor}" class="nav-link text-white">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#edit"/></svg>
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#edit"/>
+                            </svg>
                             Editor
                         </a>
                     </li>
                     <li>
                         <a th:href="@{/workload}" class="nav-link text-white">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#speedometer2"/></svg>
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#speedometer2"/>
+                            </svg>
                             Workloads
                         </a>
                     </li>
 
                     <li>
                         <a class="nav-link dropdown-toggle text-white" role="button"
-                           data-bs-toggle="dropdown" aria-expanded="false">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#grid"/></svg>
+                           data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#grid"/>
+                            </svg>
                             Metrics
                         </a>
-                        <ul class="dropdown-menu">
+                        <!--                        <a href="#" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown"  data-bs-auto-close="outside">Web Design</a>-->
+                        <ul class="dropdown-menu shadow">
                             <li><a th:href="@{/chart/workload}" class="dropdown-item">Workload Metrics</a></li>
                             <li><a th:href="@{/chart/vm}" class="dropdown-item">System Metrics</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-<!--                            th:href="@{'?page=' + ${pageNum} + '&size=' + ${pageSize}}"-->
-                            <li><a th:href="@{/chart/pool(name='one')}" class="dropdown-item">Pool Slot #1</a></li>
-                            <li><a th:href="@{/chart/pool(name='two')}" class="dropdown-item">Pool Slot #2</a></li>
-                            <li><a th:href="@{/chart/pool(name='three')}" class="dropdown-item">Pool Slot #3</a></li>
-                            <li><a th:href="@{/chart/pool(name='four')}" class="dropdown-item">Pool Slot #4</a></li>
+                            <li class="dropend">
+                                <a class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" href="#">Pool Metrics</a>
+                                <ul class="dropdown-menu dropdown-submenu shadow">
+                                    <li class="nav-item" th:each="s: ${T(io.cockroachdb.hibachi.web.editor.Slot).values()}">
+                                        <a th:href="@{/chart/pool(name=${s.name()})}" class="dropdown-item"
+                                           th:text="${s.displayName}"></a></li>
+                                </ul>
+                            </li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a th:href="@{/api/actuator}" class="dropdown-item" target="_blank">Actuator Index</a></li>
+                            <li><a th:href="@{/api/actuator}" class="dropdown-item" target="_blank">Actuator Index</a>
+                            </li>
                         </ul>
                     </li>
 
                     <li>
                         <a class="nav-link dropdown-toggle text-white" role="button"
                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"><use xlink:href="#people-circle"/></svg>
+                            <svg class="bi d-block mx-auto mb-1" width="24" height="24">
+                                <use xlink:href="#people-circle"/>
+                            </svg>
                             Help
                         </a>
                         <ul class="dropdown-menu">

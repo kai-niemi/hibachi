@@ -1,6 +1,6 @@
 package io.cockroachdb.hibachi.web.editor;
 
-import java.util.List;
+import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -67,8 +67,8 @@ public class EditorController {
         form.setUrl("jdbc:postgresql://localhost:26257/defaultdb?sslmode=disable");
         form.setReWriteBatchedInserts(true);
         form.setApplicationModelYaml("# Press 'Generate' to create a sample application.yml");
-        form.setSlot(Slot.ONE);
-        form.setSlots(List.of(Slot.ONE, Slot.TWO, Slot.THREE, Slot.FOUR));
+        form.setSlot(Slot.RED);
+        form.setSlots(EnumSet.of(Slot.RED, Slot.GREEN, Slot.BLUE, Slot.YELLOW));
         form.setConfigProfile(ConfigProfile.OPTIMIZED);
         form.setTraceLogging(false);
         form.applyConfigStrategy();
@@ -218,7 +218,7 @@ public class EditorController {
 
                 messagePublisher.convertAndSend(TopicName.TOAST_MESSAGE,
                         Toast.of("Pinned datasource configuration to slot %s."
-                                .formatted(configModel.getSlot().getName())));
+                                .formatted(configModel.getSlot().getDisplayName())));
 
                 applicationEventPublisher.publishEvent(
                         new DataSourceConfigPinnedEvent(this, configModel));

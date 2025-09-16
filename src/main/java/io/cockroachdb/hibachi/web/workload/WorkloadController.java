@@ -1,6 +1,7 @@
 package io.cockroachdb.hibachi.web.workload;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,19 +71,13 @@ public class WorkloadController {
             @ModelAttribute(value = "configModel", binding = false) ConfigModel configModel
     ) {
         WorkloadForm form = new WorkloadForm();
-        form.setDuration(Duration.ofMinutes(15).toSeconds());
         form.setCount(10);
-        form.setWorkloadType(WorkloadType.select_one);
         form.setProbability(0.75);
         form.setWaitTime(0);
         form.setWaitTimeVariation(0);
-
-        List<Slot> occupiedSlots = configModel
-                .getSlots()
-                .stream()
-                .filter(Slot::isOccupied).toList();
-        form.setSlots(occupiedSlots);
-
+        form.setDuration(Duration.ofMinutes(15).toSeconds());
+        form.setWorkloadType(WorkloadType.select_one);
+        form.setSlots(configModel.getOccupiedSlots());
         return form;
     }
 
@@ -112,7 +107,7 @@ public class WorkloadController {
         } else {
             final ConfigModel configModel;
             if (Objects.nonNull(workloadForm.getSlot())) {
-                configModel = poolConfigModels.get(workloadForm.getSlot().getName().toLowerCase());
+                configModel = poolConfigModels.get(workloadForm.getSlot().getDisplayName().toLowerCase());
             } else {
                 configModel = null;
             }

@@ -408,10 +408,10 @@
                                     <div th:each="s: ${configModel.slots}">
                                         <input class="btn-check" type="radio" autocomplete="off"
                                                th:field="*{slot}"
-                                               th:value="${s.getName()}">
+                                               th:value="${s.name()}">
                                         <label th:for="${#ids.prev('slot')}"
                                                th:class="${s.getClassName()}"
-                                               th:text="${s.getName()}"></label>
+                                               th:text="${s.displayName}"></label>
                                     </div>
                                 </div>
                             </div>

@@ -1,6 +1,6 @@
 package io.cockroachdb.hibachi.web.editor;
 
-import java.util.List;
+import java.util.EnumSet;
 import java.util.Objects;
 
 import org.springframework.transaction.annotation.Isolation;
@@ -55,7 +55,7 @@ public class ConfigModel {
     private Multiplier multiplier;
 
     @NotEmpty
-    private List<Slot> slots = List.of();
+    private EnumSet<Slot> slots = EnumSet.noneOf(Slot.class);
 
     @NotNull(message = "Pool slot must be selected")
     private Slot slot;
@@ -101,7 +101,7 @@ public class ConfigModel {
     }
 
     public String getPoolName() {
-        return slot.getName();
+        return slot.getDisplayName();
     }
 
     public String getValidationQuery() {
@@ -112,11 +112,21 @@ public class ConfigModel {
         this.validationQuery = validationQuery;
     }
 
-    public List<Slot> getSlots() {
+    public EnumSet<Slot> getSlots() {
         return slots;
     }
 
-    public void setSlots(List<Slot> slots) {
+    public EnumSet<Slot> getOccupiedSlots() {
+        if (slots.isEmpty()) {
+            return EnumSet.noneOf(Slot.class);
+        }
+        return EnumSet.copyOf(slots
+                .stream()
+                .filter(Slot::isOccupied)
+                .toList());
+    }
+
+    public void setSlots(EnumSet<Slot> slots) {
         this.slots = slots;
     }
 
