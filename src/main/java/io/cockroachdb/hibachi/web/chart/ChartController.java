@@ -28,6 +28,7 @@ import io.cockroachdb.hibachi.web.common.MessagePublisher;
 import io.cockroachdb.hibachi.web.common.TopicName;
 import io.cockroachdb.hibachi.web.common.WebController;
 import io.cockroachdb.hibachi.web.editor.DataSourceCreatedEvent;
+import io.cockroachdb.hibachi.web.editor.Slot;
 import io.cockroachdb.hibachi.web.workload.WorkloadManager;
 
 /**
@@ -107,7 +108,7 @@ public class ChartController {
     @GetMapping("/pool")
     public Callable<String> getPoolChartsPage(@RequestParam("name") String name,
                                               Model model) {
-        model.addAttribute("name", name);
+        model.addAttribute("name", Slot.valueOf(name).getDisplayName());
         return () -> "pool-charts";
     }
 

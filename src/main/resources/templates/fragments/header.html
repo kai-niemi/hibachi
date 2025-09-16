@@ -60,7 +60,8 @@
                             <li class="dropend">
                                 <a class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" href="#">Pool Metrics</a>
                                 <ul class="dropdown-menu dropdown-submenu shadow">
-                                    <li class="nav-item" th:each="s: ${T(io.cockroachdb.hibachi.web.editor.Slot).values()}">
+                                    <li class="nav-item" th:each="s: ${T(io.cockroachdb.hibachi.web.editor.Slot).values()}"
+                                                         th:if="${s.isOccupied()}">
                                         <a th:href="@{/chart/pool(name=${s.name()})}" class="dropdown-item"
                                            th:text="${s.displayName}"></a></li>
                                 </ul>
