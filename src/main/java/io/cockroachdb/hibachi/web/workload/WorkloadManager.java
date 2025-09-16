@@ -11,33 +11,123 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
+import javax.sql.DataSource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import io.cockroachdb.hibachi.config.ClosableDataSource;
 import io.cockroachdb.hibachi.web.chart.Metrics;
 import io.cockroachdb.hibachi.web.chart.MetricsDataPoint;
+import io.cockroachdb.hibachi.web.editor.ConfigModel;
+import io.cockroachdb.hibachi.web.editor.DataSourceCreatedEvent;
+import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
+import io.cockroachdb.hibachi.web.editor.model.HikariConfigModel;
 
 /**
  * Manager for background workloads and time series data points for call metrics.
  */
 @Component
 public class WorkloadManager {
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     private final List<WorkloadModel> workloadModels = Collections.synchronizedList(new LinkedList<>());
 
     private final List<MetricsDataPoint> dataPoints = Collections.synchronizedList(new ArrayList<>());
 
     @Autowired
+    private WorkloadExecutor workloadExecutor;
+
+    @Autowired
+    private Function<DataSourceModel, ClosableDataSource> dataSourceFactory;
+
+    @Autowired
+    private Function<DataSource, PlatformTransactionManager> transactionManagerFactory;
+
+    @Autowired
     private ApplicationEventPublisher applicationEventPublisher;
 
-    public void addWorkload(WorkloadModel workloadModel) {
-        workloadModels.add(workloadModel);
+    public void submitWorkloads(WorkloadForm workloadForm,
+                                ConfigModel configModel) {
+
+        try (ClosableDataSource dataSource = dataSourceFactory.apply(DataSourceModel.builder()
+                .withHikariConfig(HikariConfigModel.toHikariModel(configModel))
+                .withDriverClassName("org.postgresql.Driver")
+                .withUrl(configModel.getUrl())
+                .withUsername(configModel.getUserName())
+                .withPassword(configModel.getPassword())
+                .withTraceLogging(configModel.isTraceLogging())
+                .withName(configModel.getPoolName())
+                .build())) {
+            initSchema(dataSource);
+        }
+
+        final DataSource dataSource = dataSourceFactory.apply(DataSourceModel.builder()
+                .withHikariConfig(HikariConfigModel.toHikariModel(configModel))
+                .withDriverClassName("org.postgresql.Driver")
+                .withUrl(configModel.getUrl())
+                .withUsername(configModel.getUserName())
+                .withPassword(configModel.getPassword())
+                .withTraceLogging(configModel.isTraceLogging())
+                .withName(configModel.getPoolName())
+                .withProbability(workloadForm.getProbability())
+                .withWaitTime(workloadForm.getWaitTime())
+                .withWaitTimeVariation(workloadForm.getWaitTimeVariation())
+                .build());
+
+        final TransactionTemplate transactionTemplate = new TransactionTemplate(
+                transactionManagerFactory.apply(dataSource));
+        transactionTemplate.setIsolationLevel(configModel.getIsolation().value());
+
+        IntStream.rangeClosed(1, workloadForm.getCount())
+                .forEach(value -> {
+                    final WorkloadType workloadType = workloadForm.getWorkloadType();
+
+                    final Runnable workloadTask = workloadType.createWorkload(
+                            new JdbcTemplate(dataSource));
+
+                    final Runnable transactionWrapper = () ->
+                            transactionTemplate.executeWithoutResult(
+                                    transactionStatus -> workloadTask.run());
+
+                    WorkloadModel workloadModel = workloadExecutor
+                            .submitWorkloadTask(
+                                    workloadType.getDescription(),
+                                    configModel.getPoolName(),
+                                    Duration.ofSeconds(workloadForm.getDuration()),
+                                    transactionWrapper);
+
+                    workloadModels.add(workloadModel);
+
+                    logger.info("Submitted %d/%d workloads".formatted(value, workloadForm.getCount()));
+                });
 
         fireUpdatedEvent();
+
+        applicationEventPublisher.publishEvent(new DataSourceCreatedEvent(this, dataSource));
+    }
+
+    private void initSchema(DataSource dataSource) {
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.setCommentPrefix("--");
+        populator.setIgnoreFailedDrops(true);
+        populator.addScript(new ClassPathResource("db/create.sql"));
+
+        DatabasePopulatorUtils.execute(populator, dataSource);
     }
 
     public List<WorkloadModel> getWorkloads() {

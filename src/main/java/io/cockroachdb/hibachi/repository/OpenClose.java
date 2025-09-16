@@ -1,12 +1,11 @@
 package io.cockroachdb.hibachi.repository;
 
-import javax.sql.DataSource;
-
 import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 public class OpenClose extends AbstractTask {
-    public OpenClose(DataSource dataSource) {
-        super(dataSource);
+    public OpenClose(JdbcTemplate jdbcTemplate) {
+        super(jdbcTemplate);
     }
 
     @Override

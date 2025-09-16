@@ -47,7 +47,7 @@
                     </svg>
                     No datasource available
                 </h4>
-                <p>Pin a datasource to a free slot in the <a th:href="@{/editor}">editor</a>.</p>
+                <p>First you need to pin a datasource configuration to a slot in the <a th:href="@{/editor}">Editor</a>.</p>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
@@ -62,12 +62,11 @@
                                     data-bs-toggle="modal"
                                     data-bs-target="#addModal">Add
                             </button>
-                            <div class="vr"></div>
                             <button class="btn btn-sm btn-warning" type="button"
-                                    data-bs-toggle="modal" data-bs-target="#confirmCancelAllModal">Cancel All
+                                    data-bs-toggle="modal" data-bs-target="#confirmCancelAllModal">Cancel
                             </button>
                             <button class="btn btn-sm btn-danger" type="button"
-                                    data-bs-toggle="modal" data-bs-target="#confirmDeleteAllModal">Delete All
+                                    data-bs-toggle="modal" data-bs-target="#confirmDeleteAllModal">Delete
                             </button>
                         </div>
                     </div>
@@ -83,6 +82,7 @@
                     <tr>
                         <th>#</th>
                         <th>Name</th>
+                        <th>Pool</th>
                         <th>Remaining</th>
                         <th>P90</th>
                         <th>P99</th>
@@ -102,6 +102,7 @@
                         <td>
                             <a th:href="@{/workload/{id}(id=${workload.id})}" th:text="${workload.title}"></a>
                         </td>
+                        <td th:text="${workload.poolName}" class="pool-name"></td>
                         <td th:text="${workload.remainingTime}" class="remaining-time"></td>
                         <td th:text="${workload.metrics.p90}" class="p90"></td>
                         <td th:text="${workload.metrics.p99}" class="p99"></td>
@@ -133,11 +134,12 @@
                         <th>Avg / &Sigma;</th>
                         <th></th>
                         <th></th>
-                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p90,2,1)}" class="p90">0</th>
-                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p99,2,1)}" class="p99">0</th>
-                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p999,2,1)}" class="p999">0</th>
-                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerSec,2,1)}" class="opsPerSec">0</th>
-                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerMin,2,1)}" class="opsPerMin">0</th>
+                        <th></th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p90,1,1)}" class="p90">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p99,1,1)}" class="p99">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p999,1,1)}" class="p999">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerSec,1,1)}" class="opsPerSec">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerMin,1,1)}" class="opsPerMin">0</th>
                         <th th:text="${aggregatedMetrics.success}" class="success">0</th>
                         <th th:text="${aggregatedMetrics.transientFail}" class="transientFail">0</th>
                         <th th:text="${aggregatedMetrics.nonTransientFail}" class="nonTransientFail">0</th>
@@ -260,7 +262,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Delete Confirmation</h5>
+                    <h5 class="modal-title">Cancel Confirmation</h5>
                     <button type="button" class="btn-close" data-bs-dismi ss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -284,7 +286,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete all workloads?</p>
+                    <p>Are you sure you want to delete all non-running workloads?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

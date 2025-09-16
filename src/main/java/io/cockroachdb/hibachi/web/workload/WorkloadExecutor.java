@@ -44,13 +44,17 @@ public class WorkloadExecutor {
     @Qualifier("workloadAsyncTaskExecutor")
     private AsyncTaskExecutor asyncTaskExecutor;
 
-    public WorkloadModel submitWorkloadTask(String description, Duration duration, Runnable task) {
+    public WorkloadModel submitWorkloadTask(String description,
+                                            String poolName,
+                                            Duration duration,
+                                            Runnable task) {
         final Metrics metrics = Metrics.empty();
         final LinkedList<Problem> problems = new LinkedList<>();
 
         final WorkloadModel workloadModel = new WorkloadModel(
                 monotonicId.incrementAndGet(),
                 description,
+                poolName,
                 duration,
                 metrics,
                 problems);

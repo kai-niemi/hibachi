@@ -14,7 +14,9 @@ import io.cockroachdb.hibachi.web.chart.Problem;
 public class WorkloadModel {
     private final Integer id;
 
-    private final String description;
+    private final String title;
+
+    private final String poolName;
 
     private final Duration duration;
 
@@ -27,18 +29,20 @@ public class WorkloadModel {
     private WorkloadStatus status;
 
     public WorkloadModel(Integer id,
-                         String description,
+                         String title,
+                         String poolName,
                          Duration duration,
                          Metrics metrics,
                          LinkedList<Problem> problems) {
         Objects.requireNonNull(id);
-        Objects.requireNonNull(description);
+        Objects.requireNonNull(title);
         Objects.requireNonNull(duration);
         Objects.requireNonNull(metrics);
         Objects.requireNonNull(problems);
 
         this.id = id;
-        this.description = description;
+        this.title = title;
+        this.poolName = poolName;
         this.duration = duration;
         this.metrics = metrics;
         this.problems = problems;
@@ -51,7 +55,11 @@ public class WorkloadModel {
     }
 
     public String getTitle() {
-        return description;
+        return title;
+    }
+
+    public String getPoolName() {
+        return poolName;
     }
 
     public List<Problem> getProblems() {

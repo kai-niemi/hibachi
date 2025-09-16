@@ -3,6 +3,7 @@ package io.cockroachdb.hibachi.web.editor.model;
 import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Validated
@@ -84,12 +85,16 @@ public class DataSourceModel {
     @JsonProperty("hikari")
     private HikariConfigModel hikariConfig;
 
+    @JsonIgnore
     private boolean traceLogging;
 
+    @JsonIgnore
     private double probability;
 
+    @JsonIgnore
     private long waitTime;
 
+    @JsonIgnore
     private long waitTimeVariation;
 
     protected DataSourceModel() {

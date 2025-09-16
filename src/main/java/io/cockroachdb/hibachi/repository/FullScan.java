@@ -2,9 +2,12 @@ package io.cockroachdb.hibachi.repository;
 
 import javax.sql.DataSource;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 public class FullScan extends AbstractTask {
-    public FullScan(DataSource dataSource) {
-        super(dataSource);
+    public FullScan(JdbcTemplate jdbcTemplate) {
+
+        super(jdbcTemplate);
     }
 
     @Override

@@ -1,10 +1,10 @@
 package io.cockroachdb.hibachi.repository;
 
-import javax.sql.DataSource;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 public class SelectVersion  extends AbstractTask {
-    public SelectVersion(DataSource dataSource) {
-        super(dataSource);
+    public SelectVersion(JdbcTemplate jdbcTemplate) {
+        super(jdbcTemplate);
     }
 
     @Override

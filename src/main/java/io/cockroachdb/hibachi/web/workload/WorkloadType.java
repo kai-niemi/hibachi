@@ -1,6 +1,6 @@
 package io.cockroachdb.hibachi.web.workload;
 
-import javax.sql.DataSource;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.cockroachdb.hibachi.repository.FullScan;
 import io.cockroachdb.hibachi.repository.InsertBatch;
@@ -14,57 +14,57 @@ public enum WorkloadType {
     open_close("Open close",
             "Open and close connections") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new OpenClose(dataSource);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new OpenClose(jdbcTemplate);
         }
     },
     singleton_insert("Singleton insert",
             "Single insert statements") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new InsertOne(dataSource);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new InsertOne(jdbcTemplate);
         }
     },
     batch_insert("Batch insert",
             "Batch of 32 insert statements") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new InsertBatch(dataSource);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new InsertBatch(jdbcTemplate);
         }
     },
     point_read("Point read",
             "Single point read") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new PointRead(dataSource, false);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new PointRead(jdbcTemplate, false);
         }
     },
     point_read_historical("Historical point read",
             "Single point exact staleness read") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new PointRead(dataSource, true);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new PointRead(jdbcTemplate, true);
         }
     },
     full_scan("Full table scan",
             "Full table scan using order by random") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new FullScan(dataSource);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new FullScan(jdbcTemplate);
         }
     },
     select_one("Select one query",
-            "A 'select 1' statement") {
+            "select 1") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new SelectOne(dataSource);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new SelectOne(jdbcTemplate);
         }
     },
     select_version("Select version query",
-            "A 'select version()' statement") {
+            "select version()") {
         @Override
-        public Runnable startWorkload(DataSource dataSource) {
-            return new SelectVersion(dataSource);
+        public Runnable createWorkload(JdbcTemplate jdbcTemplate) {
+            return new SelectVersion(jdbcTemplate);
         }
     };
 
@@ -86,5 +86,5 @@ public enum WorkloadType {
         return description;
     }
 
-    public abstract Runnable startWorkload(DataSource dataSource);
+    public abstract Runnable createWorkload(JdbcTemplate jdbcTemplate);
 }

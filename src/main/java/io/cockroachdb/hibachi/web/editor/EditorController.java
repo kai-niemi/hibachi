@@ -217,7 +217,7 @@ public class EditorController {
                 slot.setOccupied(true);
 
                 messagePublisher.convertAndSend(TopicName.TOAST_MESSAGE,
-                        Toast.of("Pinned a new datasource to slot %s."
+                        Toast.of("Pinned datasource configuration to slot %s."
                                 .formatted(configModel.getSlot().getName())));
 
                 applicationEventPublisher.publishEvent(
