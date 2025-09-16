@@ -1,6 +1,7 @@
 package io.cockroachdb.hibachi.web.editor;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.transaction.annotation.Isolation;
@@ -117,13 +118,14 @@ public class ConfigModel {
     }
 
     public EnumSet<Slot> getOccupiedSlots() {
-        if (slots.isEmpty()) {
-            return EnumSet.noneOf(Slot.class);
-        }
-        return EnumSet.copyOf(slots
+        List<Slot> slotList = slots
                 .stream()
                 .filter(Slot::isOccupied)
-                .toList());
+                .toList();
+        if (slotList.isEmpty()) {
+            return EnumSet.noneOf(Slot.class);
+        }
+        return EnumSet.copyOf(slotList);
     }
 
     public void setSlots(EnumSet<Slot> slots) {

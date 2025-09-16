@@ -13,16 +13,13 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.util.StringUtils;
 
-@EnableAspectJAutoProxy(proxyTargetClass = true)
 @SpringBootApplication(exclude = {
         SecurityAutoConfiguration.class,
         ManagementWebSecurityAutoConfiguration.class,
@@ -30,7 +27,6 @@ import org.springframework.util.StringUtils;
         DataSourceAutoConfiguration.class,
         DataSourceTransactionManagerAutoConfiguration.class,
         JdbcRepositoriesAutoConfiguration.class,
-        JpaRepositoriesAutoConfiguration.class,
 })
 public class Application {
     private static void printHelpAndExit(Consumer<AnsiConsole> message) {

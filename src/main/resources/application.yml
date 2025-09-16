@@ -31,7 +31,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,shutdown,env,threaddump,metrics,prometheus
+        include: health,info,shutdown,env,heapdump,threaddump,metrics,prometheus,scheduledtasks
       base-path: /api/actuator
 
 #############################

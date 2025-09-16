@@ -9,8 +9,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 import io.cockroachdb.hibachi.web.chart.TimeSeries;
-import io.cockroachdb.hibachi.web.workload.WorkloadModel;
 import io.cockroachdb.hibachi.web.workload.WorkloadManager;
+import io.cockroachdb.hibachi.web.workload.WorkloadModel;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
