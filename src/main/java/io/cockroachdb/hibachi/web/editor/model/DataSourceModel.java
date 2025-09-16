@@ -49,6 +49,21 @@ public class DataSourceModel {
             return this;
         }
 
+        public Builder withProbability(double probability) {
+            instance.probability= probability;
+            return this;
+        }
+
+        public Builder withWaitTime(long waitTime) {
+            instance.waitTime = waitTime;
+            return this;
+        }
+
+        public Builder withWaitTimeVariation(long waitTimeVariation) {
+            instance.waitTimeVariation = waitTimeVariation;
+            return this;
+        }
+
         public DataSourceModel build() {
             Assert.hasLength(instance.driverClassName, "name is required");
             Assert.notNull(instance.url, "url is required");
@@ -71,7 +86,25 @@ public class DataSourceModel {
 
     private boolean traceLogging;
 
+    private double probability;
+
+    private long waitTime;
+
+    private long waitTimeVariation;
+
     protected DataSourceModel() {
+    }
+
+    public double getProbability() {
+        return probability;
+    }
+
+    public long getWaitTime() {
+        return waitTime;
+    }
+
+    public long getWaitTimeVariation() {
+        return waitTimeVariation;
     }
 
     public boolean isTraceLogging() {

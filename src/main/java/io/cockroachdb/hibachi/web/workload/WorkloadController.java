@@ -1,29 +1,25 @@
 package io.cockroachdb.hibachi.web.workload;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContextException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -37,17 +33,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.view.RedirectView;
 
-import com.zaxxer.hikari.HikariDataSource;
-
 import jakarta.validation.Valid;
 
+import io.cockroachdb.hibachi.config.ClosableDataSource;
 import io.cockroachdb.hibachi.web.chart.Metrics;
 import io.cockroachdb.hibachi.web.common.MessagePublisher;
 import io.cockroachdb.hibachi.web.common.TopicName;
 import io.cockroachdb.hibachi.web.common.WebController;
 import io.cockroachdb.hibachi.web.editor.ConfigModel;
+import io.cockroachdb.hibachi.web.editor.DataSourceConfigPinnedEvent;
 import io.cockroachdb.hibachi.web.editor.DataSourceCreatedEvent;
 import io.cockroachdb.hibachi.web.editor.Slot;
+import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
+import io.cockroachdb.hibachi.web.editor.model.HikariConfigModel;
 
 @WebController
 @RequestMapping("/workload")
@@ -62,7 +60,16 @@ public class WorkloadController {
     @Autowired
     private MessagePublisher messagePublisher;
 
-    private final Map<String, DataSource> connectionPools = new HashMap<>();
+    @Autowired
+    private Function<DataSourceModel, ClosableDataSource> dataSourceFactory;
+
+    @Autowired
+    private Function<DataSource, PlatformTransactionManager> transactionManagerFactory;
+
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
+
+    private final Map<String, ConfigModel> poolConfigModels = new HashMap<>();
 
     @Scheduled(fixedRate = 5, initialDelay = 5, timeUnit = TimeUnit.SECONDS)
     public void modelUpdate() {
@@ -70,14 +77,10 @@ public class WorkloadController {
     }
 
     @EventListener
-    public void handle(DataSourceCreatedEvent event) {
-        try {
-            HikariDataSource dataSource = event.getDataSource().unwrap(HikariDataSource.class);
-            Objects.requireNonNull(dataSource.getPoolName(), "pool name is required");
-            connectionPools.put(dataSource.getPoolName().toLowerCase(), dataSource);
-        } catch (SQLException e) {
-            throw new ApplicationContextException("", e);
-        }
+    public void handle(DataSourceConfigPinnedEvent event) {
+        ConfigModel configModel = event.getConfigModel();
+        Objects.requireNonNull(configModel.getPoolName(), "pool name is required");
+        poolConfigModels.put(configModel.getPoolName().toLowerCase(), configModel);
     }
 
     @EventListener
@@ -90,9 +93,12 @@ public class WorkloadController {
             @ModelAttribute(value = "configModel", binding = false) ConfigModel configModel
     ) {
         WorkloadForm form = new WorkloadForm();
-        form.setDuration(Duration.ofMinutes(5).toSeconds());
-        form.setCount(4);
-        form.setWorkloadType(WorkloadType.random_wait);
+        form.setDuration(Duration.ofMinutes(15).toSeconds());
+        form.setCount(10);
+        form.setWorkloadType(WorkloadType.select_one);
+        form.setProbability(0.75);
+        form.setWaitTime(0);
+        form.setWaitTimeVariation(0);
 
         List<Slot> occupiedSlots = configModel
                 .getSlots()
@@ -119,15 +125,62 @@ public class WorkloadController {
     }
 
     @PostMapping(params = "action=add")
-    public Callable<String> submitWorkloadForm(@ModelAttribute("workloadForm") @Valid WorkloadForm workloadForm,
+    public Callable<String> submitWorkloadForm(@ModelAttribute("workloadForm")
+                                               @Valid WorkloadForm workloadForm,
                                                BindingResult bindingResult,
                                                Model model) {
+        model.addAttribute("workloadForm", workloadForm);
 
-
-        final WorkloadType workloadType = workloadForm.getWorkloadType();
-        if (workloadType.isRequiresDataSource() && Objects.isNull(workloadForm.getSlot())) {
-            bindingResult.addError(new ObjectError("globalError", "Selected workload requires a datasource!"));
+        if (Objects.isNull(workloadForm.getSlot())) {
+            bindingResult.addError(new ObjectError("globalError",
+                    "No datasource slot selected!"));
         }
+
+        final ConfigModel configModel;
+        if (Objects.nonNull(workloadForm.getSlot())) {
+            configModel = poolConfigModels.get(workloadForm.getSlot().getName().toLowerCase());
+        } else {
+            configModel = null;
+        }
+
+        if (Objects.isNull(configModel)) {
+            bindingResult.addError(new ObjectError("globalError",
+                    "No pool config for selected slot"));
+        }
+
+        final DataSource dataSource = dataSourceFactory.apply(DataSourceModel.builder()
+                .withHikariConfig(HikariConfigModel.toHikariModel(configModel))
+                .withDriverClassName("org.postgresql.Driver")
+                .withUrl(configModel.getUrl())
+                .withUsername(configModel.getUserName())
+                .withPassword(configModel.getPassword())
+                .withTraceLogging(configModel.isTraceLogging())
+                .withName(configModel.getPoolName())
+                .withProbability(workloadForm.getProbability())
+                .withWaitTime(workloadForm.getWaitTime())
+                .withWaitTimeVariation(workloadForm.getWaitTimeVariation())
+                .build());
+
+        final TransactionTemplate transactionTemplate = new TransactionTemplate(
+                transactionManagerFactory.apply(dataSource));
+        transactionTemplate.setIsolationLevel(configModel.getIsolation().value());
+
+        IntStream.rangeClosed(1, workloadForm.getCount())
+                .forEach(value -> {
+                    final WorkloadType workloadType = workloadForm.getWorkloadType();
+
+                    final Runnable workloadTask = workloadType.startWorkload(dataSource);
+
+                    final Runnable transactionWrapper = () -> {
+                        transactionTemplate.executeWithoutResult(
+                                transactionStatus -> workloadTask.run());
+                    };
+
+                    final Duration duration = Duration.ofSeconds(workloadForm.getDuration());
+
+                    workloadManager.addWorkload(workloadExecutor
+                            .submitWorkloadTask(workloadType.getDescription(), duration, transactionWrapper));
+                });
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
@@ -135,57 +188,7 @@ public class WorkloadController {
             return () -> "workload";
         }
 
-        final DataSource dataSource;
-
-        if (Objects.nonNull(workloadForm.getSlot())) {
-            dataSource = connectionPools.get(workloadForm.getSlot().getName().toLowerCase());
-            Objects.requireNonNull(dataSource, "dataSource not found");
-        } else {
-            dataSource = null;
-        }
-
-        final Duration duration = Duration.ofSeconds(workloadForm.getDuration());
-
-        IntStream.rangeClosed(1, workloadForm.getCount())
-                .forEach(value -> {
-                    final Runnable workloadTask = workloadType
-                            .startWorkload(dataSource);
-
-                    final Runnable pauseTask = () -> {
-                        long waitMillis = workloadForm.getPause() + ThreadLocalRandom.current()
-                                .nextLong(workloadForm.getPauseVariation());
-                        try {
-                            workloadTask.run();
-                            TimeUnit.MILLISECONDS.sleep(waitMillis);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    };
-
-//                    DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-//                    transactionManager.setRollbackOnCommitFailure(true);
-//                    transactionManager.setValidateExistingTransaction(false);
-//
-//                    TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-//                    transactionTemplate.setIsolationLevelName("");
-//                    transactionTemplate.executeWithoutResult(transactionStatus -> {
-//                        workloadTask.run();
-//                    });
-//
-//                    jdbcTemplate.execute(new ConnectionCallback<Object>() {
-//                        @Override
-//                        public Object doInConnection(Connection con) throws SQLException, DataAccessException {
-//                            return null;
-//                        }
-//                    });
-
-
-                    final WorkloadModel workloadModel = workloadExecutor
-                            .submitWorkloadTask(workloadType.getDescription(), duration, pauseTask);
-                    workloadManager.addWorkload(workloadModel);
-                });
-
-        model.addAttribute("workloadForm", workloadForm);
+        applicationEventPublisher.publishEvent(new DataSourceCreatedEvent(this, dataSource));
 
         return () -> "redirect:workload";
     }
@@ -199,25 +202,25 @@ public class WorkloadController {
     }
 
     @PostMapping(value = "/cancelAll")
-    public RedirectView cancelAll() {
+    public RedirectView cancelAllWorkloads() {
         workloadManager.cancelWorkloads();
         return new RedirectView("/workload");
     }
 
     @PostMapping(value = "/deleteAll")
-    public RedirectView deleteAll() {
+    public RedirectView deleteAllWorkloads() {
         workloadManager.deleteWorkloads();
         return new RedirectView("/workload");
     }
 
     @GetMapping(value = "/cancel/{id}")
-    public RedirectView cancel(@PathVariable("id") Integer id) {
+    public RedirectView cancelWorkload(@PathVariable("id") Integer id) {
         workloadManager.cancelWorkload(id);
         return new RedirectView("/workload");
     }
 
     @GetMapping(value = "/delete/{id}")
-    public RedirectView delete(@PathVariable("id") Integer id) {
+    public RedirectView deleteWorkload(@PathVariable("id") Integer id) {
         workloadManager.deleteWorkload(id);
         return new RedirectView("/workload");
     }

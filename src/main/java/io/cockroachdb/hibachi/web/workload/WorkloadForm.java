@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.validation.annotation.Validated;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,40 +15,48 @@ public class WorkloadForm {
     @NotNull(message = "Workload type must be selected")
     private WorkloadType workloadType;
 
-    @NotNull(message = "Duration is empty")
     @Min(value = 10, message = "Duration must be > 10s")
-    private Long duration;
+    private long duration;
 
-    @NotNull(message = "Pause is empty")
-    @Min(value = 0, message = "Pause must be >= 0")
-    private Long pause;
+    @Min(value = 0, message = "Wait time must be >= 0")
+    @Max(value = 1, message = "Wait time must be <= 1")
+    private double probability;
 
-    @NotNull(message = "Pause variation is empty")
-    @Min(value = 0, message = "Pause variation must be >= 0")
-    private Long pauseVariation;
+    @Min(value = 0, message = "Wait time must be >= 0")
+    private long waitTime;
 
-    @NotNull(message = "Thread count is empty")
+    @Min(value = 0, message = "Wait time variation must be >= 0")
+    private long waitTimeVariation;
+
     @Min(value = 1, message = "Thread count must be > 0")
-    private Integer count = 1;
+    private int count = 1;
 
     private List<Slot> slots = List.of();
 
     private Slot slot;
 
-    public Long getPause() {
-        return pause;
+    public double getProbability() {
+        return probability;
     }
 
-    public void setPause(Long pause) {
-        this.pause = pause;
+    public void setProbability(double probability) {
+        this.probability = probability;
     }
 
-    public Long getPauseVariation() {
-        return pauseVariation;
+    public long getWaitTime() {
+        return waitTime;
     }
 
-    public void setPauseVariation(Long pauseVariation) {
-        this.pauseVariation = pauseVariation;
+    public void setWaitTime(long waitTime) {
+        this.waitTime = waitTime;
+    }
+
+    public long getWaitTimeVariation() {
+        return waitTimeVariation;
+    }
+
+    public void setWaitTimeVariation(long waitTimeVariation) {
+        this.waitTimeVariation = waitTimeVariation;
     }
 
     public List<Slot> getSlots() {
@@ -66,11 +75,11 @@ public class WorkloadForm {
         this.slot = slot;
     }
 
-    public Long getDuration() {
+    public long getDuration() {
         return duration;
     }
 
-    public void setDuration(Long duration) {
+    public void setDuration(long duration) {
         this.duration = duration;
     }
 
@@ -82,11 +91,11 @@ public class WorkloadForm {
         this.workloadType = workloadType;
     }
 
-    public Integer getCount() {
+    public int getCount() {
         return count;
     }
 
-    public void setCount(Integer count) {
+    public void setCount(int count) {
         this.count = count;
     }
 }

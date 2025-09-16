@@ -133,9 +133,9 @@
                         <th>Avg / &Sigma;</th>
                         <th></th>
                         <th></th>
-                        <th th:text="${aggregatedMetrics.p90}" class="p90">0</th>
-                        <th th:text="${aggregatedMetrics.p99}" class="p99">0</th>
-                        <th th:text="${aggregatedMetrics.p999}" class="p999">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p90,2,1)}" class="p90">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p99,2,1)}" class="p99">0</th>
+                        <th th:text="${#numbers.formatDecimal(aggregatedMetrics.p999,2,1)}" class="p999">0</th>
                         <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerSec,2,1)}" class="opsPerSec">0</th>
                         <th th:text="${#numbers.formatDecimal(aggregatedMetrics.opsPerMin,2,1)}" class="opsPerMin">0</th>
                         <th th:text="${aggregatedMetrics.success}" class="success">0</th>
@@ -167,7 +167,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Add Workload(s)</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Start Workload</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -179,8 +179,8 @@
                                     th:value="${wt}" th:text="${wt.displayValue + ' (' + wt.description + ')'}"></option>
                         </select>
                         <div id="helpBlock" class="form-text">
-                            Specifies the percentage of connections a toxic will affect. This is most useful for
-                            toxics with a timeout, which would allow X % of connections to timeout.
+                            Specifies the type of workload to run in separate connection threads for a given duration
+                            and with optional delays before closing connection.
                         </div>
                     </div>
 
@@ -204,33 +204,32 @@
                     </div>
 
                     <div class="form-floating mb-3">
-                        <input th:field="*{pause}"
-                               th:value="${pause}"
-                               type="text" class="form-control"
-                               id="pause" placeholder="150">
-                        <label for="pause">Pause after opening a connection (<code>ms</code>):</label>
+                        <input th:field="*{probability}"
+                               th:value="${probability}"
+                               type="number" class="form-control"
+                               id="probability" placeholder="0">
+                        <label for="probability">Delay probability (0-1.0) (<code>decimal</code>):</label>
                     </div>
 
                     <div class="form-floating mb-3">
-                        <input th:field="*{pauseVariation}"
-                               th:value="${pauseVariation}"
-                               type="text" class="form-control"
-                               id="pauseVariation" placeholder="150">
-                        <label for="pauseVariation">Variation of time delay (<code>ms</code>):</label>
+                        <input th:field="*{waitTime}"
+                               th:value="${waitTime}"
+                               type="number" class="form-control"
+                               id="pause" placeholder="150">
+                        <label for="pause">Delay before closing a connection (<code>seconds</code>):</label>
                     </div>
 
-<!--
-                    <div class="mb-3">
-                        <label for="toxicity" class="form-label">Toxicity factor (0-100%):</label>
-                        <input th:field="*{toxicity}"
-                               type="range" class="form-range" min="0" max="100" step="1" id="toxicity"
-                               aria-describedby="toxicityHelpBlock">
+                    <div class="form-floating mb-3">
+                        <input th:field="*{waitTimeVariation}"
+                               th:value="${waitTimeVariation}"
+                               type="number" class="form-control"
+                               id="pauseVariation" placeholder="150">
+                        <label for="pauseVariation">Variation of time delay (<code>seconds</code>):</label>
                     </div>
--->
 
                     <div class="mb-3">
                         <div class="col-auto">
-                            <label class="col-form-label">Datasource slot</label>
+                            <label class="col-form-label">Datasource slot:</label>
                         </div>
 
                         <div class="btn-group" role="group">
@@ -249,7 +248,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" name="action" value="add"
-                            class="btn btn-primary">Add</button>
+                            class="btn btn-primary">Start</button>
                 </div>
             </div>
         </div>

@@ -1,5 +1,8 @@
 package io.cockroachdb.hibachi.config;
 
+import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
@@ -17,11 +20,15 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.annotation.Scope;
 import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
 
+import net.ttddyy.dsproxy.listener.MethodExecutionContext;
+import net.ttddyy.dsproxy.listener.lifecycle.JdbcLifecycleEventListenerAdapter;
 import net.ttddyy.dsproxy.listener.logging.DefaultQueryLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
@@ -37,6 +44,9 @@ public class DataSourceConfig implements BeanClassLoaderAware {
 
     private final Logger logger = LoggerFactory.getLogger(SQL_TRACE_LOGGER);
 
+    @Autowired
+    private MeterRegistry registry;
+
     private ClassLoader classLoader;
 
     @Override
@@ -44,8 +54,21 @@ public class DataSourceConfig implements BeanClassLoaderAware {
         this.classLoader = classLoader;
     }
 
-    @Autowired
-    private MeterRegistry registry;
+    @Bean
+    @Lazy
+    @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public Function<DataSource, PlatformTransactionManager> transactionManagerFactory() {
+        return model -> {
+            DataSourceTransactionManager transactionManager = new DataSourceTransactionManager();
+            transactionManager.setDataSource(model);
+            transactionManager.setGlobalRollbackOnParticipationFailure(false);
+            transactionManager.setEnforceReadOnly(true);
+            transactionManager.setNestedTransactionAllowed(true);
+            transactionManager.setRollbackOnCommitFailure(false);
+            transactionManager.setDefaultTimeout(-1);
+            return transactionManager;
+        };
+    }
 
     @Bean
     @Lazy
@@ -56,7 +79,6 @@ public class DataSourceConfig implements BeanClassLoaderAware {
             config.setJdbcUrl(model.getUrl());
             config.setUsername(model.getUserName());
             config.setPassword(model.getPassword());
-
             config.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(registry));
 
             HikariDataSource dataSource = DataSourceBuilder.create(classLoader)
@@ -69,12 +91,49 @@ public class DataSourceConfig implements BeanClassLoaderAware {
 
             config.copyStateTo(dataSource);
 
-            return new ClosableDataSource(
-                    model.isTraceLogging() ? loggingProxyDataSource(dataSource) : dataSource);
+            DataSource target = model.isTraceLogging() ? loggingProxy(dataSource) : dataSource;
+
+            if (model.getWaitTime() > 0) {
+                return new ClosableDataSource(
+                        slowCloseProxy(target,
+                                model.getProbability(),
+                                model.getWaitTime(),
+                                model.getWaitTimeVariation()));
+            }
+
+            return new ClosableDataSource(target);
         };
     }
 
-    private DataSource loggingProxyDataSource(DataSource dataSource) {
+    private DataSource slowCloseProxy(DataSource dataSource, double probability,
+                                      long waitTime, long waitTimeVariation) {
+        return ProxyDataSourceBuilder
+                .create(dataSource)
+                .name("Connection Slow Close")
+                .listener(new JdbcLifecycleEventListenerAdapter() {
+                    @Override
+                    public void beforeClose(MethodExecutionContext executionContext) {
+                        try {
+                            ThreadLocalRandom random = ThreadLocalRandom.current();
+                            if (random.nextDouble(0, 1.0) < Math.min(1.0, probability)) {
+                                long sleepTime = waitTime;
+                                if (waitTimeVariation > 0) {
+                                    sleepTime += random.nextLong(waitTimeVariation);
+                                }
+                                logger.debug("Delay connection close with %s"
+                                        .formatted(Duration.ofSeconds(sleepTime)));
+                                TimeUnit.SECONDS.sleep(sleepTime);
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } finally {
+                            super.beforeClose(executionContext);
+                        }
+                    }
+                }).build();
+    }
+
+    private DataSource loggingProxy(DataSource dataSource) {
         DefaultQueryLogEntryCreator creator = new DefaultQueryLogEntryCreator();
         creator.setMultiline(true);
 
@@ -86,7 +145,7 @@ public class DataSourceConfig implements BeanClassLoaderAware {
 
         return ProxyDataSourceBuilder
                 .create(dataSource)
-                .name("SQL-Trace")
+                .name("SQL Logger")
                 .listener(listener)
                 .asJson()
                 .build();

@@ -1,13 +1,9 @@
 package io.cockroachdb.hibachi.web.editor;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
-import javax.sql.DataSource;
-
-import org.postgresql.PGProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,44 +33,13 @@ import io.cockroachdb.hibachi.web.common.WebController;
 import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
 import io.cockroachdb.hibachi.web.editor.model.HikariConfigModel;
 import io.cockroachdb.hibachi.web.editor.model.RootModel;
+import static io.cockroachdb.hibachi.web.editor.model.HikariConfigModel.toHikariModel;
 
 @WebController
 @RequestMapping("/editor")
 @SessionAttributes("configModel")
 public class EditorController {
     public static final String DEFAULT_VALIDATION_QUERY = "select version()";
-
-    public static HikariConfigModel toHikariModel(ConfigModel model) throws IllegalArgumentException {
-        HikariConfigModel config = new HikariConfigModel();
-        config.setPoolName(model.getSlot().getName());
-        config.setMaximumPoolSize(model.getMaximumPoolSize());
-
-        // Can't set -1 even if it's the default
-        if (model.getMinimumIdle() >= 0) {
-            config.setMinimumIdle(model.getMinimumIdle());
-        }
-
-        config.setIdleTimeout(Duration.ofSeconds(model.getIdleTimeout()).toMillis());
-        config.setMaxLifetime(Duration.ofSeconds(model.getMaxLifetime()).toMillis());
-        config.setValidationTimeout(Duration.ofSeconds(model.getValidationTimeout()).toMillis());
-        config.setConnectionTimeout(Duration.ofSeconds(model.getConnectionTimeout()).toMillis());
-        config.setInitializationFailTimeout(Duration.ofSeconds(model.getInitializationFailTimeout()).toMillis());
-
-        config.setTransactionIsolation("TRANSACTION_" + model.getIsolation().name().toUpperCase());
-        config.setConnectionTestQuery(model.getValidationQuery());
-        config.setAutoCommit(model.isAutoCommit());
-        config.setReadOnly(model.isReadOnly());
-
-        if (model.isReWriteBatchedInserts()) {
-            config.addDataSourceProperty(PGProperty.REWRITE_BATCHED_INSERTS.getName(), true);
-        }
-
-        if (StringUtils.hasLength(model.getAppName())) {
-            config.addDataSourceProperty(PGProperty.APPLICATION_NAME.getName(), model.getAppName());
-        }
-
-        return config;
-    }
 
     @Autowired
     @Qualifier("yamlObjectMapper")
@@ -106,9 +71,7 @@ public class EditorController {
         form.setSlots(List.of(Slot.ONE, Slot.TWO, Slot.THREE, Slot.FOUR));
         form.setConfigProfile(ConfigProfile.OPTIMIZED);
         form.setTraceLogging(false);
-
         form.applyConfigStrategy();
-
         return form;
     }
 
@@ -118,7 +81,8 @@ public class EditorController {
     }
 
     @PostMapping(params = "action=apply")
-    public Callable<String> applyConfigurationStrategy(@ModelAttribute("configModel") @Valid ConfigModel configModel,
+    public Callable<String> applyConfigurationStrategy(@ModelAttribute("configModel")
+                                                           @Valid ConfigModel configModel,
                                                        BindingResult bindingResult,
                                                        Model model) {
         if (bindingResult.hasErrors()) {
@@ -234,10 +198,10 @@ public class EditorController {
     }
 
     @PostMapping(params = "action=pin")
-    public Callable<String> pinDataSource(@ModelAttribute("configModel")
+    public Callable<String> pinDataSourceConfig(@ModelAttribute("configModel")
                                           @Valid ConfigModel configModel,
-                                          BindingResult bindingResult,
-                                          Model model) {
+                                                BindingResult bindingResult,
+                                                Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("errors", bindingResult.getFieldErrors());
             return () -> "editor";
@@ -245,27 +209,6 @@ public class EditorController {
 
         return () -> {
             try {
-                DataSource dataSource = dataSourceFactory.apply(DataSourceModel.builder()
-                        .withHikariConfig(toHikariModel(configModel))
-                        .withDriverClassName("org.postgresql.Driver")
-                        .withUrl(configModel.getUrl())
-                        .withUsername(configModel.getUserName())
-                        .withPassword(configModel.getPassword())
-                        .withTraceLogging(configModel.isTraceLogging())
-                        .build());
-
-                final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-
-                String query = configModel.getValidationQuery();
-                if (StringUtils.hasLength(query)) {
-                    Assert.state(query.toUpperCase().startsWith("SELECT "),
-                            "Validation query must start with 'SELECT'");
-                } else {
-                    query = DEFAULT_VALIDATION_QUERY;
-                }
-
-                jdbcTemplate.queryForObject(query, String.class);
-
                 Slot slot = configModel.getSlots()
                         .stream()
                         .filter(x -> x.equals(configModel.getSlot()))
@@ -278,7 +221,7 @@ public class EditorController {
                                 .formatted(configModel.getSlot().getName())));
 
                 applicationEventPublisher.publishEvent(
-                        new DataSourceCreatedEvent(this, dataSource));
+                        new DataSourceConfigPinnedEvent(this, configModel));
             } catch (Exception e) {
                 bindingResult.addError(new ObjectError("globalError", e.getMessage()));
             }

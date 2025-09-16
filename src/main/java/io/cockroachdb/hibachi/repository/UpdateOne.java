@@ -9,9 +9,7 @@ public class UpdateOne extends AbstractTask {
 
     @Override
     public void run() {
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            findNext(false)
-                    .ifPresent(sampleRepository::updateSingleton);
-        });
+        findNext(false)
+                .ifPresent(sampleRepository::updateSingleton);
     }
 }

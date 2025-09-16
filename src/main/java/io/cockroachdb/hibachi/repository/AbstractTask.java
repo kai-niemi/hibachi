@@ -7,17 +7,13 @@ import javax.sql.DataSource;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.transaction.support.TransactionTemplate;
 
 public abstract class AbstractTask implements Runnable {
     protected final SampleRepository sampleRepository;
 
-    private final JdbcTemplate jdbcTemplate;
-
-//    protected final TransactionTemplate transactionTemplate;
+    protected final JdbcTemplate jdbcTemplate;
 
     private final AtomicReference<Optional<SampleEntity>> latestEntity
             = new AtomicReference<>(Optional.empty());

@@ -100,6 +100,10 @@ public class ConfigModel {
         return configProfile.configStrategy().applySettings(this);
     }
 
+    public String getPoolName() {
+        return slot.getName();
+    }
+
     public String getValidationQuery() {
         return validationQuery;
     }

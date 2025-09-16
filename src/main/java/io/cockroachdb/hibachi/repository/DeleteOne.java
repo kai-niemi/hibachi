@@ -9,9 +9,7 @@ public class DeleteOne extends AbstractTask {
 
     @Override
     public void run() {
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            findNext(false)
-                    .ifPresent(profileEntity -> sampleRepository.deleteById(profileEntity.getId()));
-        });
+        findNext(false)
+                .ifPresent(profileEntity -> sampleRepository.deleteById(profileEntity.getId()));
     }
 }
