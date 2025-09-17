@@ -127,7 +127,7 @@
                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                             title="Configuration strategy to use when calculating pool size and timeouts"
                                             aria-label="Default select">
-                                        <option th:each="cp : ${T(io.cockroachdb.hibachi.web.editor.ConfigProfile).values()}"
+                                        <option th:each="cp : ${T(io.cockroachdb.hibachi.model.ConfigProfile).values()}"
                                                 th:value="${cp}"
                                                 th:text="${cp.displayValue}"></option>
                                     </select>
@@ -140,7 +140,7 @@
                             <div class="col-md">
                                 <label class="col-form-label">vCPU ratio</label>
                                 <div class="btn-group" role="group">
-                                    <div th:each="m: ${T(io.cockroachdb.hibachi.web.editor.Multiplier).values()}">
+                                    <div th:each="m: ${T(io.cockroachdb.hibachi.model.Multiplier).values()}">
                                         <input class="btn-check" type="radio" autocomplete="off"
                                                data-bs-toggle="tooltip" data-bs-placement="top"
                                                title="vCPUs multiplier for max pool size"
@@ -301,7 +301,6 @@
                                            th:value="${validationQuery}"
                                            type="text" class="form-control" placeholder=""
                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                           title="Connection validation query"
                                            id="validationQuery">
                                     <label for="validationQuery">Validation query (<code>sql</code>):</label>
                                 </div>

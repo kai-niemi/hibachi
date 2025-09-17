@@ -8,14 +8,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
-import io.cockroachdb.hibachi.web.chart.TimeSeries;
-import io.cockroachdb.hibachi.web.workload.WorkloadManager;
-import io.cockroachdb.hibachi.web.workload.WorkloadModel;
+import io.cockroachdb.hibachi.metrics.TimeSeries;
+import io.cockroachdb.hibachi.workload.WorkloadManager;
+import io.cockroachdb.hibachi.workload.WorkloadModel;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
 @Configuration
-@Order(Ordered.LOWEST_PRECEDENCE-1)
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class InstrumentationConfig {
     @Bean
     public TimeSeries threadPoolTimeSeries(@Autowired MeterRegistry registry) {
@@ -45,7 +45,8 @@ public class InstrumentationConfig {
     }
 
     @Bean
-    public TimeSeries workloadTimeSeries(@Autowired MeterRegistry registry, @Autowired WorkloadManager workloadManager) {
+    public TimeSeries workloadTimeSeries(@Autowired MeterRegistry registry,
+                                         @Autowired WorkloadManager workloadManager) {
         Gauge.builder("hibachi.workloads.total", workloadManager, value ->
                         value.getWorkloads().size())
                 .description("Total amount of workloads")

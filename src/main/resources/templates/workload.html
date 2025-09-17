@@ -177,7 +177,7 @@
                         <label for="workload-type" class="form-label">Type of workload:</label>
                         <select th:field="*{workloadType}" id="workload-type" class="form-select"
                                 aria-describedby="helpBlock">
-                            <option th:each="wt : ${T(io.cockroachdb.hibachi.web.workload.WorkloadType).values()}"
+                            <option th:each="wt : ${T(io.cockroachdb.hibachi.workload.WorkloadType).values()}"
                                     th:value="${wt}" th:text="${wt.displayValue + ' (' + wt.description + ')'}"></option>
                         </select>
                         <div id="helpBlock" class="form-text">

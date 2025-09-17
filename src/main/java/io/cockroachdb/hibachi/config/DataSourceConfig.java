@@ -34,7 +34,7 @@ import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 
-import io.cockroachdb.hibachi.web.editor.model.DataSourceModel;
+import io.cockroachdb.hibachi.model.DataSourceModel;
 import io.micrometer.core.instrument.MeterRegistry;
 
 @Configuration
@@ -43,9 +43,6 @@ public class DataSourceConfig implements BeanClassLoaderAware {
     public static final String SQL_TRACE_LOGGER = "io.cockroachdb.hibachi.SQL_TRACE";
 
     private final Logger logger = LoggerFactory.getLogger(SQL_TRACE_LOGGER);
-
-    @Autowired
-    private MeterRegistry registry;
 
     private ClassLoader classLoader;
 
@@ -73,7 +70,8 @@ public class DataSourceConfig implements BeanClassLoaderAware {
     @Bean
     @Lazy
     @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public Function<DataSourceModel, ClosableDataSource> dataSourceFactory() {
+    public Function<DataSourceModel, ClosableDataSource> dataSourceFactory(
+            @Autowired MeterRegistry registry) {
         return model -> {
             HikariConfig config = model.getHikariConfig();
             config.setJdbcUrl(model.getUrl());

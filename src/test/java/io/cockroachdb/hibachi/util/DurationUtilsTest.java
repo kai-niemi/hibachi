@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import io.cockroachdb.hibachi.metrics.DurationUtils;
+
 @Tag("unit-test")
 public class DurationUtilsTest {
     @Test

@@ -1,8 +1,5 @@
 package io.cockroachdb.hibachi.config;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +22,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import io.cockroachdb.hibachi.util.DurationUtils;
+import io.cockroachdb.hibachi.metrics.DurationUtils;
 
 @EnableWebMvc
 @Configuration
