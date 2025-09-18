@@ -42,8 +42,10 @@ public class ClosableDataSource extends DelegatingDataSource implements Closeabl
     public void close() {
         try {
             HikariDataSource dataSource = unwrap(HikariDataSource.class);
-            logger.trace("Closing (on close) datasource: {}", dataSource);
-            dataSource.close();
+            if (dataSource.isRunning()) {
+                logger.trace("Closing (on close) datasource: {}", dataSource);
+                dataSource.close();
+            }
         } catch (SQLException ex) {
             throw new IllegalStateException(ex);
         }

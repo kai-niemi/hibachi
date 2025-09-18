@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.metadata.HikariDataSourcePoolMetadata;
 import org.springframework.stereotype.Component;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -55,6 +56,9 @@ public class MetricsRegistrator {
         ));
     }
 
+    /**
+     * @see com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTracker
+     */
     public TimeSeries registerDataSourceTimeMeters(HikariDataSource dataSource) {
 //        final HikariDataSourcePoolMetadata metadata = new HikariDataSourcePoolMetadata(dataSource);
 //        Gauge.builder("pooltool.pool.connections.usage", metadata, HikariDataSourcePoolMetadata::getUsage)

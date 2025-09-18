@@ -1,7 +1,9 @@
 package io.cockroachdb.pooltool.web;
 
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 
 import io.cockroachdb.pooltool.config.ClosableDataSource;
+import io.cockroachdb.pooltool.metrics.DurationUtils;
 import io.cockroachdb.pooltool.model.ConfigModel;
 import io.cockroachdb.pooltool.model.ConfigProfile;
 import io.cockroachdb.pooltool.model.DataSourceConfigPinnedEvent;
@@ -160,6 +163,11 @@ public class EditorController {
             return () -> "editor";
         }
 
+        messagePublisher.convertAndSend(TopicName.TOAST_MESSAGE,
+                Toast.of("Attempting to create datasource with connection timeout %s."
+                        .formatted(DurationUtils.durationToDisplayString(
+                                Duration.ofSeconds(configModel.getConnectionTimeout())))));
+
         return () -> {
             HikariConfigModel hikariConfig = toHikariModel(configModel);
             hikariConfig.setReadOnly(true);
@@ -175,12 +183,12 @@ public class EditorController {
                 final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
                 String query = configModel.getValidationQuery();
-                if (StringUtils.hasLength(query)) {
-                    Assert.state(query.toUpperCase().startsWith("SELECT "),
-                            "Validation query must start with 'SELECT'");
-                } else {
+                if (!StringUtils.hasLength(query)) {
                     query = DEFAULT_VALIDATION_QUERY;
                 }
+
+                Assert.state(query.toUpperCase().startsWith("SELECT "),
+                        "Validation query must start with 'SELECT'");
 
                 //noinspection SqlSourceToSinkFlow
                 model.addAttribute("testSuccess", jdbcTemplate.queryForObject(query, String.class));

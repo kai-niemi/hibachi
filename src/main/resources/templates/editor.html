@@ -395,7 +395,7 @@
 
                         <div class="row g-2 mb-2">
                             <div class="col-md">
-                                <label class="col-form-label">Select slot</label>
+                                <label class="col-form-label">Select pin slot</label>
                                 <div class="btn-group" role="group">
                                     <div th:each="s: ${configModel.slots}">
                                         <input class="btn-check" type="radio" autocomplete="off"
@@ -412,9 +412,6 @@
                                         data-bs-toggle="tooltip" data-bs-placement="top"
                                         title="Create a datasource and pin it to selected slot">Pin
                                 </button>
-
-                                <div class="vr"></div>
-
                                 <button name="action" value="validate" type="submit" class="btn btn-warning"
                                         data-bs-toggle="tooltip" data-bs-placement="top"
                                         title="Validate pool properties and execute test query">Test

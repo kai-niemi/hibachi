@@ -76,7 +76,7 @@ const chartConnectionPoolTimes = new Chart(document.getElementById(
         plugins: {
             title: {
                 display: true,
-                text: 'Times'
+                text: 'Timings'
             },
         },
         responsive: true,
