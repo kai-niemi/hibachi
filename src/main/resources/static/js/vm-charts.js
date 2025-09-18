@@ -194,7 +194,7 @@ MetricChartsDashboard.prototype = {
 document.addEventListener('DOMContentLoaded', function () {
     new MetricChartsDashboard({
         endpoints: {
-            socket: '/hibachi-service',
+            socket: '/pooltool-service',
         },
 
         topics: {

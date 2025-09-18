@@ -9,8 +9,8 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>io.cockroachdb.hibachi</groupId>
-    <artifactId>hibachi</artifactId>
+    <groupId>io.cockroachdb.pooltool</groupId>
+    <artifactId>pooltool</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -27,9 +27,9 @@
     <inceptionYear>2025</inceptionYear>
 
     <scm>
-        <connection>scm:git:https://github.com/kai-niemi/hibachi.git</connection>
-        <developerConnection>scm:git:https://github.com/kai-niemi/hibachi.git</developerConnection>
-        <url>https://github.com/kai-niemi/hibachi.git</url>
+        <connection>scm:git:https://github.com/kai-niemi/pooltool.git</connection>
+        <developerConnection>scm:git:https://github.com/kai-niemi/pooltool.git</developerConnection>
+        <url>https://github.com/kai-niemi/pooltool.git</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -51,7 +51,7 @@
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/kai-niemi/hibachi/issues</url>
+        <url>https://github.com/kai-niemi/pooltool/issues</url>
     </issueManagement>
 
     <dependencies>
@@ -197,7 +197,7 @@
     </dependencies>
 
     <build>
-        <finalName>hibachi</finalName>
+        <finalName>pooltool</finalName>
 
         <plugins>
             <plugin>

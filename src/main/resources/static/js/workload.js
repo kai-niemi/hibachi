@@ -118,7 +118,7 @@ WorkloadDashboard.prototype = {
 document.addEventListener('DOMContentLoaded', function () {
     new WorkloadDashboard({
         endpoints: {
-            socket: '/hibachi-service',
+            socket: '/pooltool-service',
         },
 
         topics: {

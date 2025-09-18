@@ -160,7 +160,7 @@ PoolChartsDashboard.prototype = {
 document.addEventListener('DOMContentLoaded', function () {
     new PoolChartsDashboard({
         endpoints: {
-            socket: '/hibachi-service',
+            socket: '/pooltool-service',
         },
 
         topics: {

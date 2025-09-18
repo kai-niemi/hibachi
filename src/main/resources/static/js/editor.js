@@ -58,7 +58,7 @@ EditorDashboard.prototype = {
 document.addEventListener('DOMContentLoaded', function () {
     new EditorDashboard({
         endpoints: {
-            socket: '/hibachi-service',
+            socket: '/pooltool-service',
         },
 
         topics: {

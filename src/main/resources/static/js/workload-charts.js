@@ -232,7 +232,7 @@ WorkloadChartsDashboard.prototype = {
 document.addEventListener('DOMContentLoaded', function () {
     new WorkloadChartsDashboard({
         endpoints: {
-            socket: '/hibachi-service',
+            socket: '/pooltool-service',
         },
 
         topics: {

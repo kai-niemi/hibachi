@@ -1,7 +1,7 @@
-[![Java CI](https://github.com/kai-niemi/hibachi/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/kai-niemi/hibachi/actions/workflows/maven.yml)
+[![Java CI](https://github.com/kai-niemi/pooltool/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/kai-niemi/pooltool/actions/workflows/maven.yml)
 
 <!-- TOC -->
-* [Introduction](#introduction)
+* [About](#about)
   * [Compatibility](#compatibility)
 * [Building and Running](#building-and-running)
   * [Install the JDK](#install-the-jdk)
@@ -50,7 +50,7 @@ Ubuntu:
 
 ## Clone the project
 
-    git clone git@github.com:kai-niemi/hibachi && cd hibachi
+    git clone git@github.com:kai-niemi/pooltool && cd pooltool
 
 ## Build the artifact
 
@@ -59,7 +59,7 @@ Ubuntu:
 
 ## Running
 
-    java -jar target/hibachi.jar <args>
+    java -jar target/pooltool.jar <args>
 
 # Terms of Use
 
